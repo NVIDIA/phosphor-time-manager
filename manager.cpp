@@ -83,7 +83,8 @@ void Manager::updateNtpSetting(const std::string& value)
 
     try
     {
-        bus.call_noreply(method);
+        bus.call_noreply(method,
+            std::chrono::duration_cast<std::chrono::microseconds>(ntpTimeout).count());
         log<level::INFO>("Updated NTP setting", entry("ENABLED=%d", isNtp));
     }
     catch (const sdbusplus::exception::SdBusError& ex)

@@ -47,6 +47,9 @@ class Manager
     /** @brief The current time mode */
     Mode timeMode = DEFAULT_TIME_MODE;
 
+    /** @brief The timeout for NTP setting */
+    std::chrono::seconds ntpTimeout = std::chrono::seconds(60);
+
     /** @brief Get setting from settingsd service
      *
      * @param[in] path - The dbus object path
