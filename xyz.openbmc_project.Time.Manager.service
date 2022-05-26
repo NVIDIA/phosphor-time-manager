@@ -7,8 +7,7 @@ After=xyz.openbmc_project.Network.service
 
 [Service]
 Restart=always
-ExecStart=/usr/bin/env phosphor-time-manager
-SyslogIdentifier=phosphor-time-manager
+ExecStart=/usr/bin/phosphor-time-manager
 Type=dbus
 BusName=xyz.openbmc_project.Time.Manager
 
