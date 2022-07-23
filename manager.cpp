@@ -27,7 +27,7 @@ namespace time
 
 using namespace phosphor::logging;
 
-Manager::Manager(sdbusplus::bus::bus& bus) : bus(bus), settings(bus)
+Manager::Manager(sdbusplus::bus_t& bus) : bus(bus), settings(bus)
 {
     using namespace sdbusplus::bus::match::rules;
     settingsMatches.emplace_back(
@@ -52,7 +52,7 @@ void Manager::onPropertyChanged(const std::string& key,
     onTimeModeChanged(value);
 }
 
-int Manager::onSettingsChanged(sdbusplus::message::message& msg)
+int Manager::onSettingsChanged(sdbusplus::message_t& msg)
 {
     using Interface = std::string;
     using Property = std::string;
@@ -87,7 +87,7 @@ void Manager::updateNtpSetting(const std::string& value)
             std::chrono::duration_cast<std::chrono::microseconds>(ntpTimeout).count());
 	lg2::info("Updated NTP setting: {ENABLED}", "ENABLED", isNtp);
     }
-    catch (const sdbusplus::exception::exception& ex)
+    catch (const sdbusplus::exception_t& ex)
     {
         lg2::error("Failed to update NTP setting: {ERROR}", "ERROR", ex);
     }
