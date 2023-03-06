@@ -59,9 +59,13 @@ libtimemanager = static_library('libtimemanager',
                                  dependencies : deps)
 ############################################################################
 
+systemd = dependency ('systemd')
+phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces')
+sdbusplus = dependency('sdbusplus')
+sdeventplus = dependency('sdeventplus')
+
 # Install the files into the build directory
 
-systemd = dependency ('systemd')
 systemd_system_unit_dir = systemd.get_pkgconfig_variable('systemdsystemunitdir',
                                                          define_variable: ['prefix',
                                                                            get_option('prefix')
@@ -83,4 +87,8 @@ executable('phosphor-time-manager',
 
 if get_option('tests').enabled()
     subdir('test')
+endif
+
+if get_option('oem-nvidia').enabled()
+    subdir('oem/nvidia')
 endif

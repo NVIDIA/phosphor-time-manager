@@ -1,0 +1,11 @@
+[Unit]
+Description=NVIDIA ERoT time manager
+Wants=xyz.openbmc_project.Time.Manager.service
+After=xyz.openbmc_project.Time.Manager.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/erot-time-manager
+
+[Install]
+WantedBy=multi-user.target

@@ -5,6 +5,7 @@
 option( 'tests', type : 'feature',
         description: 'Build unit tests'
       )
+option('oem-nvidia', type: 'feature', description: 'Build NVIDIA ERoT time manager service')
 
 # Commandline variables list
 # Value can be assigned from commandline to below variables
