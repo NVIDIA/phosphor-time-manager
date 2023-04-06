@@ -4,6 +4,8 @@ Wants=mapper-wait@-xyz-openbmc_project-time-sync_method.service
 After=mapper-wait@-xyz-openbmc_project-time-sync_method.service
 Wants=xyz.openbmc_project.Network.service
 After=xyz.openbmc_project.Network.service
+Wants=xyz.openbmc_project.ObjectMapper.service
+After=xyz.openbmc_project.ObjectMapper.service
 
 [Service]
 Restart=always
