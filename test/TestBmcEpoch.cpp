@@ -18,7 +18,7 @@ class TestBmcEpoch : public testing::Test
   public:
     sdbusplus::bus_t bus;
     Manager manager;
-    sd_event* event;
+    sd_event* event = nullptr;
     std::unique_ptr<BmcEpoch> bmcEpoch;
 
     TestBmcEpoch() : bus(sdbusplus::bus::new_default()), manager(bus)
@@ -26,10 +26,10 @@ class TestBmcEpoch : public testing::Test
         // BmcEpoch requires sd_event to init
         sd_event_default(&event);
         bus.attach_event(event, SD_EVENT_PRIORITY_NORMAL);
-        bmcEpoch = std::make_unique<BmcEpoch>(bus, OBJPATH_BMC, manager);
+        bmcEpoch = std::make_unique<BmcEpoch>(bus, objpathBmc, manager);
     }
 
-    ~TestBmcEpoch()
+    ~TestBmcEpoch() override
     {
         bus.detach_event();
         sd_event_unref(event);

@@ -13,7 +13,8 @@ namespace phosphor
 namespace time
 {
 
-using namespace std::chrono;
+using EpochTimeIntf = sdbusplus::server::object_t<
+    sdbusplus::xyz::openbmc_project::Time::server::EpochTime>;
 
 using EpochTimeIntf = sdbusplus::server::object_t<
     sdbusplus::xyz::openbmc_project::Time::server::EpochTime>;
@@ -32,7 +33,12 @@ class BmcEpoch : public EpochTimeIntf, public PropertyChangeListner
         initialize();
     }
 
-    ~BmcEpoch();
+    ~BmcEpoch() override;
+
+    BmcEpoch(const BmcEpoch&) = delete;
+    BmcEpoch(BmcEpoch&&) = delete;
+    BmcEpoch& operator=(const BmcEpoch&) = delete;
+    BmcEpoch& operator=(BmcEpoch&&) = delete;
 
     /** @brief Notified on time mode changed */
     void onModeChanged(Mode mode) override;
@@ -74,7 +80,7 @@ class BmcEpoch : public EpochTimeIntf, public PropertyChangeListner
      *
      * @return Microseconds since UTC
      */
-    std::chrono::microseconds getTime() const;
+    static std::chrono::microseconds getTime();
 
   private:
     /** @brief The fd for time change event */
@@ -96,11 +102,11 @@ class BmcEpoch : public EpochTimeIntf, public PropertyChangeListner
     /** @brief The deleter of sd_event_source */
     std::function<void(sd_event_source*)> sdEventSourceDeleter =
         [](sd_event_source* p) {
-            if (p)
-            {
-                sd_event_source_unref(p);
-            }
-        };
+        if (p)
+        {
+            sd_event_source_unref(p);
+        }
+    };
     using SdEventSource =
         std::unique_ptr<sd_event_source, decltype(sdEventSourceDeleter)>;
 

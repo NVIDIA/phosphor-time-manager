@@ -1,10 +1,10 @@
 project('phosphor-time-manager',
         'cpp',
          version: '0.1',
-         meson_version: '>=0.57.0',
+         meson_version: '>=1.1.1',
          default_options: [ 'warning_level=3',
                             'werror=true',
-                            'cpp_std=c++20',
+                            'cpp_std=c++23',
                             'buildtype=debugoptimized' ])
 
 ########################################################################
@@ -42,6 +42,7 @@ deps = [
 
 conf_data = configuration_data()
 conf_data.set('DEFAULT_TIME_MODE', get_option('default_time_mode'))
+conf_data.set_quoted('DEFAULT_TIME_SYNC_OBJECT_PATH', get_option('default_time_sync_object_path'))
 
 configure_file(output: 'config.h', configuration: conf_data)
 
@@ -71,12 +72,13 @@ sdeventplus = dependency('sdeventplus')
 
 systemd = dependency ('systemd')
 systemd_system_unit_dir = systemd.get_variable(
-    pkgconfig : 'systemdsystemunitdir',
+    'systemdsystemunitdir',
     pkgconfig_define: ['prefix', get_option('prefix')])
-configure_file(input : 'xyz.openbmc_project.Time.Manager.service',
-               output : 'xyz.openbmc_project.Time.Manager.service',
-               copy : true,
-               install_dir : systemd_system_unit_dir)
+
+filesystem = import('fs')
+filesystem.copyfile('xyz.openbmc_project.Time.Manager.service',
+                    install: true,
+                    install_dir: systemd_system_unit_dir)
 
 #############################################################################
 
@@ -88,7 +90,7 @@ executable('phosphor-time-manager',
            dependencies : deps,
            install : true)
 
-if get_option('tests').enabled()
+if get_option('tests').allowed()
     subdir('test')
 endif
 
