@@ -63,10 +63,6 @@ libtimemanager = static_library('libtimemanager',
                                  dependencies : deps)
 ############################################################################
 
-systemd = dependency ('systemd')
-phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces')
-sdbusplus = dependency('sdbusplus')
-sdeventplus = dependency('sdeventplus')
 
 # Install the files into the build directory
 

@@ -1,8 +1,9 @@
+sdeventplus_dep = dependency('sdeventplus')
 deps = [
-    sdeventplus,
-    sdbusplus,
-    phosphor_dbus_interfaces,
-    logging
+    sdeventplus_dep,
+    sdbusplus_dep,
+    phosphor_dbus_interfaces_dep,
+    phosphor_logging_dep
     ]
 
 source = [
