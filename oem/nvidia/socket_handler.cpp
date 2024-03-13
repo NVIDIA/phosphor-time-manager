@@ -3,6 +3,7 @@
 #include "constants.hpp"
 #include "utils.hpp"
 
+#include <libmctp-externals.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -159,9 +160,11 @@ int Handler::initSocket(int type, int protocol,
 void Handler::processRxMsg(const std::vector<uint8_t>& requestMsg)
 {
     using type = uint8_t;
+    using tag_owner_and_tag = uint8_t;
     uint8_t eid = requestMsg[0];
     auto msg = reinterpret_cast<const mctp_vdm::Message*>(
-        requestMsg.data() + sizeof(eid) + sizeof(type));
+        requestMsg.data() + sizeof(tag_owner_and_tag) + sizeof(eid) +
+        sizeof(type));
 
     if (msg->hdr.request == 0)
     {

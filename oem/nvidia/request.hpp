@@ -5,6 +5,7 @@
 #include "types.hpp"
 #include "utils.hpp"
 
+#include <libmctp-externals.h>
 #include <sys/socket.h>
 
 #include <phosphor-logging/lg2.hpp>
@@ -167,7 +168,8 @@ class Request final : public RequestRetryTimer
 
         utils::printBuffer(utils::Tx, requestMsg);
 
-        uint8_t hdr[2] = {eid, mctp_vdm::MessageType};
+        uint8_t hdr[3] = {LIBMCTP_TAG_OWNER_MASK | MCTP_TAG_VDM, eid,
+                          mctp_vdm::MessageType};
 
         struct iovec iov[2];
         iov[0].iov_base = hdr;
