@@ -139,6 +139,24 @@ bool BmcEpoch::setTime(const microseconds& usec)
         using namespace xyz::openbmc_project::Time;
         elog<FailedError>(Failed::REASON(ex.what()));
     }
+
+    // Get string of the timestamp in ISO 8601 format
+    std::chrono::system_clock::time_point timePoint =
+        std::chrono::system_clock::time_point(
+            std::chrono::microseconds(static_cast<int64_t>(usec.count())));
+    std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
+    std::tm* gmTime = std::gmtime(&time);
+    std::ostringstream timeStamp;
+    timeStamp << std::put_time(gmTime, "%Y-%m-%dT%H:%M:%S") << "+00:00";
+
+    // Add BMC time sync log
+    std::string messageId = "OpenBMC.0.4.BMCSystemTimeUpdated";
+    std::map<std::string, std::string> addData = {};
+    addData["REDFISH_MESSAGE_ID"] = messageId;
+    addData["REDFISH_MESSAGE_ARGS"] = timeStamp.str();
+    addData["xyz.openbmc_project.Logging.Entry.Resolution"] = "None";
+    utils::addEventLog(bus, messageId,
+           "xyz.openbmc_project.Logging.Entry.Level.Informational", addData);
     return true;
 }
 

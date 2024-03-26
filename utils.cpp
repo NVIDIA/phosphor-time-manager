@@ -75,6 +75,23 @@ std::string modeToStr(Mode mode)
         mode);
 }
 
+void addEventLog(sdbusplus::bus_t& bus, const std::string& messageId,
+                 const std::string& severity, std::map<std::string, std::string>& addData)
+{
+    auto method = bus.new_method_call("xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
+                                          "xyz.openbmc_project.Logging.Create", "Create");
+    method.append(messageId);
+    method.append(severity);
+    method.append(addData);
+    try
+    {
+        bus.call_noreply(method);
+    }
+    catch (const sdbusplus::exception_t& ex)
+    {
+        error("Failed to add event log: {ERROR}", "ERROR", ex);
+    }
+}
 } // namespace utils
 } // namespace time
 } // namespace phosphor

@@ -106,6 +106,19 @@ Mode strToMode(const std::string& mode);
  */
 std::string modeToStr(Mode mode);
 
+/**
+ * @brief Add System Event Log
+ *
+ * @param[in] messageId message ID
+ * @param[in] severity severity level
+ * @param[in] addData additional data of this log
+ *
+ * @return None
+ */
+void addEventLog(sdbusplus::bus_t& bus, const std::string& messageId,
+                 const std::string& severity,
+                 std::map<std::string, std::string>& addData);
+
 } // namespace utils
 } // namespace time
 } // namespace phosphor
