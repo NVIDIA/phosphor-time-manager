@@ -33,20 +33,20 @@
 
 owners:
 - mine260309@gmail.com
-- vishwa@linux.vnet.ibm.com
 
 reviewers:
-- liuxiwei@inspur.com
+- liuxiwei@ieisystem.com
+- pavithrabarithaya07@gmail.com
 
 matchers:
 
 openbmc:
+- name: Pavithra Barithaya
+  email: pavithrabarithaya07@gmail.com
+  discord: Pavithra B
 - name: George Liu
-  email: liuxiwei@inspur.com
+  email: liuxiwei@ieisystem.com
   discord: George Liu
 - name: Lei Yu
   email: mine260309@gmail.com
   discord: LeiYU
-- name: Vishwanatha Subbanna
-  email: vishwa@linux.vnet.ibm.com
-  discord: vishwa
