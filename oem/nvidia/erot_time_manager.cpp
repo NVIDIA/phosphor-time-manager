@@ -313,6 +313,19 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
         resolution = "Wait for rate limit threshold to be cleared and retry "
                      "the operation.";
     }
+    else if (rc == static_cast<uint8_t>(mctp_vdm::CompletionCodes::ErrUnsupportedCmd))
+    {
+        lg2::info("Command to set external timestamp unsupported on EID={EID}",
+                  "EID", eid);
+        // Remove the EID that doesn't support this command.
+        mctpInfoMap.erase(mctpUUID);
+        return;
+    }
+    else
+    {
+        lg2::info("Internal error on EID={EID}", "EID", eid);
+        return;
+    }
 
     using namespace sdbusplus::xyz::openbmc_project::Logging::server;
     // using Level = ;
