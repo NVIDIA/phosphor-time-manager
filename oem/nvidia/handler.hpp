@@ -163,7 +163,7 @@ class Handler
         auto request = std::make_unique<RequestInterface>(
             sockManager.getSocket(eid), eid, event, std::move(requestMsg),
             numRetries, responseTimeOut);
-        auto timer = std::make_unique<phosphor::Timer>(
+        auto timer = std::make_unique<sdbusplus::Timer>(
             event.get(), instanceIdExpiryCallBack);
 
         handlers.emplace(key, std::make_tuple(std::move(request),
@@ -286,7 +286,7 @@ class Handler
      */
     using RequestValue =
         std::tuple<std::unique_ptr<RequestInterface>, ResponseHandler,
-                   std::unique_ptr<phosphor::Timer>>;
+                   std::unique_ptr<sdbusplus::Timer>>;
 
     /** @brief Container for storing the MCTP VDM request entries */
     std::unordered_map<RequestKey, RequestValue, RequestKeyHasher> handlers;
