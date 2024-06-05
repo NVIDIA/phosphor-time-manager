@@ -93,7 +93,7 @@ int Handler::initSocket(int type, int protocol,
             {
                 utils::printBuffer(utils::Rx, requestMsg);
 
-                if (mctp_vdm::MessageType != requestMsg[1])
+                if (mctp_vdm::MessageType != requestMsg[2])
                 {
                     // Skip this message and continue.
                 }
@@ -161,7 +161,7 @@ void Handler::processRxMsg(const std::vector<uint8_t>& requestMsg)
 {
     using type = uint8_t;
     using tag_owner_and_tag = uint8_t;
-    uint8_t eid = requestMsg[0];
+    uint8_t eid = requestMsg[1];
     auto msg = reinterpret_cast<const mctp_vdm::Message*>(
         requestMsg.data() + sizeof(tag_owner_and_tag) + sizeof(eid) +
         sizeof(type));
@@ -171,7 +171,7 @@ void Handler::processRxMsg(const std::vector<uint8_t>& requestMsg)
         auto response = reinterpret_cast<const mctp_vdm::Message*>(msg);
         size_t responseLen = requestMsg.size() -
                              sizeof(struct mctp_vdm::MsgHeader) - sizeof(eid) -
-                             sizeof(type);
+                             sizeof(type) - sizeof(tag_owner_and_tag);
         handler.handleResponse(eid, msg->hdr.instanceId, msg->hdr.msgType,
                                msg->hdr.commandCode, response, responseLen);
     }
