@@ -25,7 +25,7 @@ int main(int /*argc*/, char** /*argv*/)
 
     // ERoT time manager
     auto erotTimeManager = std::make_unique<ErotTimeManager>(
-        bus, reqHandler, sockHandler, instanceIdMgr);
+        bus, event, reqHandler, sockHandler, instanceIdMgr);
 
     std::unique_ptr<MctpDiscovery> mctpDiscoveryHandler =
         std::make_unique<MctpDiscovery>(

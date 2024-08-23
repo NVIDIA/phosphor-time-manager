@@ -6,55 +6,98 @@
 
 #include <xyz/openbmc_project/Logging/Entry/server.hpp>
 
+#include <chrono>
+
 using namespace mctp_vdm;
+using namespace std::literals;
 
 ErotTimeManager::ErotTimeManager(
     sdbusplus::bus::bus& bus,
+    sdeventplus::Event& event,
     mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
     mctp_socket::Handler& sockHandler, mctp_vdm::InstanceIdMgr& instanceIdMgr) :
-    bus(bus),
+    bus(bus), event(event),
     reqHandler(reqHandler), sockHandler(sockHandler),
-    instanceIdMgr(instanceIdMgr),
-    bmcTimeChangedSignal(
-        bus,
-        sdbusplus::bus::match::rules::propertiesChanged(
-            "/xyz/openbmc_project/time/bmc",
-            "xyz.openbmc_project.Time.EpochTime"),
-        std::bind_front(&ErotTimeManager::bmcTimeChangeHandler, this))
-{}
-
-void ErotTimeManager::bmcTimeChangeHandler(sdbusplus::message::message& msg)
+    instanceIdMgr(instanceIdMgr)
 {
-    if (setErotTimeHandle)
+    timerFd = timerfd_create(CLOCK_REALTIME, 0);
+    if (timerFd == -1)
     {
-        if (!setErotTimeHandle.done())
-        {
-            lg2::info(" Setting ERoT time already in progress..");
-            return;
-        }
-        else
-        {
-            setErotTimeHandle.destroy();
-        }
+        auto error = errno;
+        lg2::error("Failed to create timerfd: {ERRNO}", "ERRNO", error);
+        throw std::runtime_error("Failed to create timerfd, errno="s + std::strerror(error));
     }
 
-    dbus::Interface interface;
-    dbus::PropertyMap propertyMap;
-    msg.read(interface, propertyMap);
-
-    if (propertyMap.contains("Elapsed"))
+    // Choose the MAX time that is possible to avoid misfires.
+    constexpr itimerspec maxTime = 
     {
-        auto elapsedTime = std::get<uint64_t>(propertyMap.at("Elapsed"));
-        std::vector<uint8_t> eids{};
-        for (const auto& [uuid, mctpUUIDInfo] : mctpInfoMap)
+        {0, 0}, // Interval for periodic timer
+        {std::chrono::system_clock::duration::max().count(), 0}, // Initial expiration
+    };
+
+    auto rc = timerfd_settime(timerFd, TFD_TIMER_ABSTIME | TFD_TIMER_CANCEL_ON_SET, &maxTime, nullptr);
+    if (rc != 0)
+    {
+        auto error = errno;
+        lg2::error("Failed to set timerfd: {ERRNO}", "ERRNO", error);
+        throw std::runtime_error("Failed to set timerfd, errno="s + std::strerror(error));
+    }
+
+    auto mcTimeChangeCallback = std::bind(&ErotTimeManager::handleTimeChange, this, 
+                                        std::placeholders::_1, 
+                                        std::placeholders::_2, 
+                                        std::placeholders::_3);
+
+    // Subscribe for time change event and invoke callback
+    mcTimeChangeIO = std::make_unique<IO>(event, timerFd, EPOLLIN, std::move(mcTimeChangeCallback));
+}
+
+ErotTimeManager::~ErotTimeManager()
+{
+    close(timerFd);
+}
+
+void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
+{
+    uint64_t expirations = 0;
+
+    auto size = read(fd, &expirations, sizeof(expirations));
+    if (size == -1) 
+    {
+        if (errno == ECANCELED) 
         {
-            eids.emplace_back(mctpUUIDInfo.top().eid);
-        }
-        auto co = setTimeOnErots(elapsedTime, eids);
-        setErotTimeHandle = co.handle;
-        if (setErotTimeHandle.done())
-        {
-            setErotTimeHandle = nullptr;
+            // This error is expected when the timer is canceled due to a time change
+            lg2::info("System time change detected - sync time with ERoT");
+
+            if (setErotTimeHandle)
+            {
+                if (!setErotTimeHandle.done())
+                {
+                    lg2::info(" Setting ERoT time already in progress..");
+                    return;
+                }
+                else
+                {
+                    setErotTimeHandle.destroy();
+                }
+            }
+
+            // Current time since the epoch in microseconds
+            auto now = std::chrono::system_clock::now();
+            auto duration = now.time_since_epoch();
+            uint64_t elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+
+            std::vector<uint8_t> eids{};
+            for (const auto& [uuid, mctpUUIDInfo] : mctpInfoMap)
+            {
+                eids.emplace_back(mctpUUIDInfo.top().eid);
+            }
+            auto co = setTimeOnErots(elapsedTime, eids);
+            setErotTimeHandle = co.handle;
+            if (setErotTimeHandle.done())
+            {
+                setErotTimeHandle = nullptr;
+            }
         }
     }
 }

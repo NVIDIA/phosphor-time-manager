@@ -9,6 +9,8 @@
 #include <tuple>
 #include <unordered_map>
 
+#include <sdeventplus/source/io.hpp>
+
 namespace mctp
 {
 
@@ -47,6 +49,7 @@ using MctpInfoMap = std::unordered_map<UUID, MCTPEidInfoPriorityQueue>;
 } // namespace mctp
 
 class MctpDiscoveryHandlerIntf;
+using namespace sdeventplus::source;
 
 /** @class ErotTimeManager
  *
@@ -62,7 +65,7 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     ErotTimeManager(ErotTimeManager&&) = delete;
     ErotTimeManager& operator=(const ErotTimeManager&) = delete;
     ErotTimeManager& operator=(ErotTimeManager&&) = delete;
-    ~ErotTimeManager() = default;
+    ~ErotTimeManager();
 
     /** @brief
      *
@@ -73,11 +76,10 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
      */
     explicit ErotTimeManager(
         sdbusplus::bus::bus& bus,
+        sdeventplus::Event& event,
         mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
         mctp_socket::Handler& sockHandler,
         mctp_vdm::InstanceIdMgr& instanceIdMgr);
-
-    void bmcTimeChangeHandler(sdbusplus::message::message& msg);
 
     mctp_vdm::requester::Coroutine setTimeOnErots(uint64_t epochElapsedTime,
                                                   std::vector<uint8_t> eids);
@@ -94,6 +96,9 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     /** @brief reference to the systemd bus */
     sdbusplus::bus::bus& bus;
 
+    /** @brief reference to the event loop */
+    sdeventplus::Event& event;
+
     mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler;
 
     mctp_socket::Handler& sockHandler;
@@ -105,8 +110,14 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     /** @brief A queue of MctpInfos to be discovered **/
     std::queue<mctp::Infos> queuedMctpInfos{};
 
-    sdbusplus::bus::match_t bmcTimeChangedSignal;
-
     /** @brief Coroutine handle for setting ERoT time */
     std::coroutine_handle<> setErotTimeHandle;
+
+    /** @brief Timer object to watch for system time changes */
+    int timerFd = -1;
+
+    /** @brief I/O event source to watch for system time changes */
+    std::unique_ptr<IO> mcTimeChangeIO = nullptr;
+
+    void handleTimeChange(IO& io, int fd, uint32_t revents);
 };
