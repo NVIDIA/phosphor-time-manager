@@ -9,7 +9,6 @@
 
 int main(int /*argc*/, char** /*argv*/)
 {
-
     auto event = sdeventplus::Event::get_default();
     auto bus = sdbusplus::bus::new_default();
     mctp_socket::Manager sockManager;

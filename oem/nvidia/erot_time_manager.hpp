@@ -4,12 +4,12 @@
 #include "mctp_endpoint_discovery.hpp"
 #include "types.hpp"
 
+#include <sdeventplus/source/io.hpp>
+
 #include <coroutine>
 #include <queue>
 #include <tuple>
 #include <unordered_map>
-
-#include <sdeventplus/source/io.hpp>
 
 namespace mctp
 {
@@ -26,7 +26,7 @@ struct MctpEidInfo
     uint8_t eid;
     mctp::Medium medium;
 
-    friend bool operator<(MctpEidInfo const& lhs, MctpEidInfo const& rhs)
+    friend bool operator<(const MctpEidInfo& lhs, const MctpEidInfo& rhs)
     {
         return mediumPriority.at(lhs.medium) > mediumPriority.at(rhs.medium);
     }
@@ -75,8 +75,7 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
      *  @param[in] instanceIdMgr - Instance ID Manager
      */
     explicit ErotTimeManager(
-        sdbusplus::bus::bus& bus,
-        sdeventplus::Event& event,
+        sdbusplus::bus::bus& bus, sdeventplus::Event& event,
         mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
         mctp_socket::Handler& sockHandler,
         mctp_vdm::InstanceIdMgr& instanceIdMgr);

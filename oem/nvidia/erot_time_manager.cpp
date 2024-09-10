@@ -12,12 +12,11 @@ using namespace mctp_vdm;
 using namespace std::literals;
 
 ErotTimeManager::ErotTimeManager(
-    sdbusplus::bus::bus& bus,
-    sdeventplus::Event& event,
+    sdbusplus::bus::bus& bus, sdeventplus::Event& event,
     mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
     mctp_socket::Handler& sockHandler, mctp_vdm::InstanceIdMgr& instanceIdMgr) :
-    bus(bus), event(event),
-    reqHandler(reqHandler), sockHandler(sockHandler),
+    bus(bus),
+    event(event), reqHandler(reqHandler), sockHandler(sockHandler),
     instanceIdMgr(instanceIdMgr)
 {
     timerFd = timerfd_create(CLOCK_REALTIME, 0);
@@ -25,31 +24,35 @@ ErotTimeManager::ErotTimeManager(
     {
         auto error = errno;
         lg2::error("Failed to create timerfd: {ERRNO}", "ERRNO", error);
-        throw std::runtime_error("Failed to create timerfd, errno="s + std::strerror(error));
+        throw std::runtime_error("Failed to create timerfd, errno="s +
+                                 std::strerror(error));
     }
 
     // Choose the MAX time that is possible to avoid misfires.
-    constexpr itimerspec maxTime = 
-    {
+    constexpr itimerspec maxTime = {
         {0, 0}, // Interval for periodic timer
-        {std::chrono::system_clock::duration::max().count(), 0}, // Initial expiration
+        {std::chrono::system_clock::duration::max().count(),
+         0},    // Initial expiration
     };
 
-    auto rc = timerfd_settime(timerFd, TFD_TIMER_ABSTIME | TFD_TIMER_CANCEL_ON_SET, &maxTime, nullptr);
+    auto rc = timerfd_settime(timerFd,
+                              TFD_TIMER_ABSTIME | TFD_TIMER_CANCEL_ON_SET,
+                              &maxTime, nullptr);
     if (rc != 0)
     {
         auto error = errno;
         lg2::error("Failed to set timerfd: {ERRNO}", "ERRNO", error);
-        throw std::runtime_error("Failed to set timerfd, errno="s + std::strerror(error));
+        throw std::runtime_error("Failed to set timerfd, errno="s +
+                                 std::strerror(error));
     }
 
-    auto mcTimeChangeCallback = std::bind(&ErotTimeManager::handleTimeChange, this, 
-                                        std::placeholders::_1, 
-                                        std::placeholders::_2, 
-                                        std::placeholders::_3);
+    auto mcTimeChangeCallback = std::bind(
+        &ErotTimeManager::handleTimeChange, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3);
 
     // Subscribe for time change event and invoke callback
-    mcTimeChangeIO = std::make_unique<IO>(event, timerFd, EPOLLIN, std::move(mcTimeChangeCallback));
+    mcTimeChangeIO = std::make_unique<IO>(event, timerFd, EPOLLIN,
+                                          std::move(mcTimeChangeCallback));
 }
 
 ErotTimeManager::~ErotTimeManager()
@@ -62,11 +65,12 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
     uint64_t expirations = 0;
 
     auto size = read(fd, &expirations, sizeof(expirations));
-    if (size == -1) 
+    if (size == -1)
     {
-        if (errno == ECANCELED) 
+        if (errno == ECANCELED)
         {
-            // This error is expected when the timer is canceled due to a time change
+            // This error is expected when the timer is canceled due to a time
+            // change
             lg2::info("System time change detected - sync time with ERoT");
 
             if (setErotTimeHandle)
@@ -85,7 +89,9 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
             // Current time since the epoch in microseconds
             auto now = std::chrono::system_clock::now();
             auto duration = now.time_since_epoch();
-            uint64_t elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+            uint64_t elapsedTime =
+                std::chrono::duration_cast<std::chrono::microseconds>(duration)
+                    .count();
 
             std::vector<uint8_t> eids{};
             for (const auto& [uuid, mctpUUIDInfo] : mctpInfoMap)
@@ -356,7 +362,8 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
         resolution = "Wait for rate limit threshold to be cleared and retry "
                      "the operation.";
     }
-    else if (rc == static_cast<uint8_t>(mctp_vdm::CompletionCodes::ErrUnsupportedCmd))
+    else if (rc ==
+             static_cast<uint8_t>(mctp_vdm::CompletionCodes::ErrUnsupportedCmd))
     {
         lg2::info("Command to set external timestamp unsupported on EID={EID}",
                   "EID", eid);
@@ -385,13 +392,13 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
                 Critical);
     asioConnection->async_method_call(
         [](boost::system::error_code ec) {
-            if (ec)
-            {
-                lg2::error("Error while logging message registry: ",
-                           "ERROR_MESSAGE", ec.message());
-                return;
-            }
-        },
+        if (ec)
+        {
+            lg2::error("Error while logging message registry: ",
+                       "ERROR_MESSAGE", ec.message());
+            return;
+        }
+    },
         "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
         "xyz.openbmc_project.Logging.Create", "Create",
         "ResourceEvent.1.0.ResourceErrorsDetected", severity, addData);

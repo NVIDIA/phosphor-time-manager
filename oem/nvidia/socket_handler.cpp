@@ -16,7 +16,6 @@ namespace mctp_socket
 void Handler::registerMctpEndpoint(uint8_t eid, int type, int protocol,
                                    const std::vector<uint8_t>& pathName)
 {
-
     if (!eidToSockMap.contains(eid))
     {
         eidToSockMap[eid] = std::make_tuple(type, protocol, pathName);
@@ -140,8 +139,8 @@ int Handler::initSocket(int type, int protocol,
     }
 
     /* Register for MCTP VDM message type */
-    ssize_t result =
-        write(sockFd, &mctp_vdm::MessageType, sizeof(mctp_vdm::MessageType));
+    ssize_t result = write(sockFd, &mctp_vdm::MessageType,
+                           sizeof(mctp_vdm::MessageType));
     if (result == -1)
     {
         rc = -errno;

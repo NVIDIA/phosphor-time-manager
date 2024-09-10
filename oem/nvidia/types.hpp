@@ -56,16 +56,16 @@ struct MsgHeader
 {
     uint32_t iana;
 #if BYTE_ORDER == LITTLE_ENDIAN
-    uint8_t instanceId : 5; //!< Instance ID
-    uint8_t reserved : 1;   //!< Reserved
-    uint8_t datagram : 1;   //!< Datagram bit
-    uint8_t request : 1;    //!< Request bit
+    uint8_t instanceId:5; //!< Instance ID
+    uint8_t reserved:1;   //!< Reserved
+    uint8_t datagram:1;   //!< Datagram bit
+    uint8_t request:1;    //!< Request bit
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
-    uint8_t request : 1;    //!< Request bit
-    uint8_t datagram : 1;   //!< Datagram bit
-    uint8_t reserved : 1;   //!< Reserved
-    uint8_t instanceId : 5; //!< Instance ID
+    uint8_t request:1;    //!< Request bit
+    uint8_t datagram:1;   //!< Datagram bit
+    uint8_t reserved:1;   //!< Reserved
+    uint8_t instanceId:5; //!< Instance ID
 #endif
     uint8_t msgType;
     uint8_t commandCode;

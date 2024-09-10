@@ -76,7 +76,6 @@ using ResponseHandler = fu2::unique_function<void(
 template <class RequestInterface>
 class Handler
 {
-
   public:
     Handler() = delete;
     Handler(const Handler&) = delete;
@@ -133,8 +132,8 @@ class Handler
                            "TYPE={TYPE}, COMMAND={COMMAND}",
                            "EID", key.eid, "INSTANCE_ID", key.instanceId,
                            "TYPE", key.type, "COMMAND", key.command);
-                auto& [request, responseHandler, timerInstance] =
-                    this->handlers[key];
+                auto& [request, responseHandler,
+                       timerInstance] = this->handlers[key];
                 request->stop();
                 auto rc = timerInstance->stop();
                 if (rc)
@@ -278,7 +277,7 @@ class Handler
         instanceIdExpiryInterval; //!< Instance ID expiration interval
     uint8_t numRetries;           //!< number of request retries
     std::chrono::milliseconds
-        responseTimeOut; //!< time to wait between each retry
+        responseTimeOut;          //!< time to wait between each retry
 
     /** @brief Container for storing the details of the MCTP VDM request
      *         message, handler for the corresponding MCTP VDM response and the
@@ -493,8 +492,7 @@ struct Coroutine
 
                 /** @brief Do nothing here for customized awaitable object.
                  */
-                void await_resume() const noexcept
-                {}
+                void await_resume() const noexcept {}
 
                 /** @brief Returning parent coroutine handle here to continue
                  * parent corotuine.
@@ -520,8 +518,7 @@ struct Coroutine
         /** @brief The handler for an exception was thrown in
          * coroutine body.
          */
-        void unhandled_exception()
-        {}
+        void unhandled_exception() {}
 
         /** @brief Keeping the value returned by co_return operator
          */

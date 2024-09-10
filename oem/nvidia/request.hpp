@@ -96,7 +96,7 @@ class RequestRetryTimer
     sdeventplus::Event& event; //!< reference to daemon's main event loop
     uint8_t numRetries;        //!< number of request retries
     std::chrono::milliseconds
-        timeout;           //!< time to wait between each retry in milliseconds
+        timeout;            //!< time to wait between each retry in milliseconds
     sdbusplus::Timer timer; //!< manages starting timers and handling timeouts
 
     /** @brief Sends the MCTP VDM request message
@@ -165,7 +165,6 @@ class Request final : public RequestRetryTimer
      */
     int send() const
     {
-
         utils::printBuffer(utils::Tx, requestMsg);
 
         uint8_t hdr[3] = {LIBMCTP_TAG_OWNER_MASK | MCTP_TAG_VDM, eid,

@@ -23,8 +23,7 @@ struct CustomFD
     CustomFD(CustomFD&&) = delete;
     CustomFD& operator=(CustomFD&&) = delete;
 
-    CustomFD(int fd) : fd(fd)
-    {}
+    CustomFD(int fd) : fd(fd) {}
 
     ~CustomFD()
     {

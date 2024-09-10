@@ -156,7 +156,8 @@ bool BmcEpoch::setTime(const microseconds& usec)
     addData["REDFISH_MESSAGE_ARGS"] = timeStamp.str();
     addData["xyz.openbmc_project.Logging.Entry.Resolution"] = "None";
     utils::addEventLog(bus, messageId,
-           "xyz.openbmc_project.Logging.Entry.Level.Informational", addData);
+                       "xyz.openbmc_project.Logging.Entry.Level.Informational",
+                       addData);
     return true;
 }
 

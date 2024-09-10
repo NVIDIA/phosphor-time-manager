@@ -25,8 +25,7 @@ class MctpDiscoveryHandlerIntf
 {
   public:
     virtual void handleMctpEndpoints(const mctp::Infos& mctpInfos) = 0;
-    virtual ~MctpDiscoveryHandlerIntf()
-    {}
+    virtual ~MctpDiscoveryHandlerIntf() {}
 };
 
 class MctpDiscovery
