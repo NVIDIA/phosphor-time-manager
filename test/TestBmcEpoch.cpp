@@ -34,6 +34,12 @@ class TestBmcEpoch : public testing::Test
         bus.detach_event();
         sd_event_unref(event);
     }
+
+    // Explicitly delete the special member functions
+    TestBmcEpoch(const TestBmcEpoch&) = delete;
+    TestBmcEpoch& operator=(const TestBmcEpoch&) = delete;
+    TestBmcEpoch(TestBmcEpoch&&) = delete;
+    TestBmcEpoch& operator=(TestBmcEpoch&&) = delete;
 };
 
 TEST_F(TestBmcEpoch, onModeChange)

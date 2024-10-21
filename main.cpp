@@ -43,7 +43,8 @@ int main()
     }
     catch (const std::exception& e)
     {
-        std::cerr << __func__ << e.what() << std::endl;
+        std::cerr << static_cast<const char*>(__func__) << " " << e.what()
+                  << std::endl;
         return -1;
     }
 }
