@@ -14,6 +14,7 @@ source = [
     'utils.cpp' ]
 
 executable('erot-time-manager',source,
+           include_directories: include_directories('..'),
            implicit_include_directories: false,
            dependencies: deps,
            install: true,

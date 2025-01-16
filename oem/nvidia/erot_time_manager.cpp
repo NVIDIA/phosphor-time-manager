@@ -73,6 +73,19 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
             // change
             lg2::info("System time change detected - sync time with ERoT");
 
+            auto currentCallTime = std::chrono::steady_clock::now();
+
+            // Check if the number of seconds defined in
+            // EROT_TIME_SYNC_INTERVAL has passed since the last call.
+            if (std::chrono::duration_cast<std::chrono::seconds>(
+                    currentCallTime - erotTimeSyncLast)
+                    .count() < EROT_TIME_SYNC_INTERVAL)
+            {
+                lg2::info(
+                    "ERoT time sync skipped - interval since last attempt too short");
+                return;
+            }
+
             if (setErotTimeHandle)
             {
                 if (!setErotTimeHandle.done())
@@ -104,6 +117,9 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
             {
                 setErotTimeHandle = nullptr;
             }
+
+            // Update the last call time
+            erotTimeSyncLast = currentCallTime;
         }
     }
 }
