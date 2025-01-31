@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../config.h"
+
 #include "instance_id.hpp"
 #include "mctp_endpoint_discovery.hpp"
 #include "types.hpp"
@@ -117,6 +119,12 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
 
     /** @brief I/O event source to watch for system time changes */
     std::unique_ptr<IO> mcTimeChangeIO = nullptr;
+
+    /** @brief  Tracks the last time the ERoT time synchronization was
+ performed. This is used to enforce a minimum interval between successive
+ synchronization attempts, defined by EROT_TIME_SYNC_INTERVAL.
+ It is updated each time a successful synchronization attempt occurs. */
+    std::chrono::steady_clock::time_point erotTimeSyncLast{};
 
     void handleTimeChange(IO& io, int fd, uint32_t revents);
 };

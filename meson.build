@@ -43,6 +43,7 @@ deps = [
 conf_data = configuration_data()
 conf_data.set('DEFAULT_TIME_MODE', get_option('default_time_mode'))
 conf_data.set_quoted('DEFAULT_TIME_SYNC_OBJECT_PATH', get_option('default_time_sync_object_path'))
+conf_data.set('EROT_TIME_SYNC_INTERVAL', get_option('erot_time_sync_interval'))
 
 configure_file(output: 'config.h', configuration: conf_data)
 

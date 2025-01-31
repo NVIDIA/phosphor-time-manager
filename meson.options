@@ -26,3 +26,10 @@ option(
     value: '/xyz/openbmc_project/time/sync_method',
     description: 'Default object path for time sync setting'
 )
+
+option(
+    'erot_time_sync_interval',
+    type: 'integer',
+    value: 60,
+    description: 'The minimum time, in seconds, required between consecutive attempts to synchronize the ERoT clock.'
+)
