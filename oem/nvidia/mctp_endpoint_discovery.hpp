@@ -21,13 +21,14 @@ using namespace dbus;
  * This abstract class defines the APIs for MctpDiscovery class has common
  * interface to execute function from different manager classes
  */
+// NOLINTBEGIN
 class MctpDiscoveryHandlerIntf
 {
   public:
     virtual void handleMctpEndpoints(const mctp::Infos& mctpInfos) = 0;
-    virtual ~MctpDiscoveryHandlerIntf() {}
+    virtual ~MctpDiscoveryHandlerIntf() = default;
 };
-
+// NOLINTEND
 class MctpDiscovery
 {
   public:

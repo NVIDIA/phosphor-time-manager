@@ -79,6 +79,7 @@ struct MsgHeader
 struct Message
 {
     struct MsgHeader hdr; //!< MCTP VDM message header
+    // NOLINTNEXTLINE
     uint8_t payload[1];   //!< &payload[0] is the beginning of the payload
 } __attribute__((packed));
 

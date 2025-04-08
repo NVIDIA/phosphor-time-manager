@@ -15,6 +15,7 @@ namespace mctp
 {
 
 using Priority = int;
+// NOLINTNEXTLINE
 static std::unordered_map<mctp::Medium, Priority> mediumPriority{
     {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.PCIe", 0},
     {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.SPI", 1},
@@ -48,8 +49,10 @@ using MctpInfoMap = std::unordered_map<UUID, MCTPEidInfoPriorityQueue>;
 
 } // namespace mctp
 
+// NOLINTBEGIN
 class MctpDiscoveryHandlerIntf;
 using namespace sdeventplus::source;
+// NOLINTEND
 
 /** @class ErotTimeManager
  *
@@ -65,7 +68,7 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     ErotTimeManager(ErotTimeManager&&) = delete;
     ErotTimeManager& operator=(const ErotTimeManager&) = delete;
     ErotTimeManager& operator=(ErotTimeManager&&) = delete;
-    ~ErotTimeManager();
+    ~ErotTimeManager() override;
 
     /** @brief
      *
@@ -80,14 +83,14 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
         mctp_socket::Handler& sockHandler,
         mctp_vdm::InstanceIdMgr& instanceIdMgr);
 
-    mctp_vdm::requester::Coroutine setTimeOnErots(uint64_t epochElapsedTime,
-                                                  std::vector<uint8_t> eids);
+    mctp_vdm::requester::Coroutine setTimeOnErots(
+        uint64_t epochElapsedTime, const std::vector<uint8_t>& eids);
     mctp_vdm::requester::Coroutine setTimeOnErot(uint8_t eid,
                                                  uint64_t epochElapsedTime);
 
     mctp_vdm::requester::Coroutine handleMctpEndpointsTask();
 
-    void handleMctpEndpoints(const mctp::Infos& mctpInfos);
+    void handleMctpEndpoints(const mctp::Infos& mctpInfos) override;
 
   private:
     void createErrorLog(uint8_t eid, uint8_t rc);
@@ -107,7 +110,7 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     mctp_vdm::InstanceIdMgr& instanceIdMgr;
 
     /** @brief A queue of MctpInfos to be discovered **/
-    std::queue<mctp::Infos> queuedMctpInfos{};
+    std::queue<mctp::Infos> queuedMctpInfos;
 
     /** @brief Coroutine handle for setting ERoT time */
     std::coroutine_handle<> setErotTimeHandle;

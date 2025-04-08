@@ -34,8 +34,8 @@ MctpDiscovery::MctpDiscovery(
     try
     {
         const dbus::Interfaces ifaceList{"xyz.openbmc_project.MCTP.Endpoint"};
-        auto method = bus.new_method_call(mapper::Service, mapper::Path,
-                                          mapper::Interface, "GetSubTree");
+        auto method = bus.new_method_call(mapper::service, mapper::path,
+                                          mapper::interface, "GetSubTree");
 
         method.append("/xyz/openbmc_project/mctp", 0, ifaceList);
         auto reply = bus.call(method);
@@ -90,21 +90,23 @@ void MctpDiscovery::populateMctpInfo(const dbus::InterfaceMap& interfaces,
     {
         for (const auto& [intfName, properties] : interfaces)
         {
-            if (intfName == mctp::UUIDInterface)
+            if (intfName == mctp::uuidInterface)
             {
                 uuid = std::get<std::string>(properties.at("UUID"));
             }
 
             if (intfName == unixSocketIntfName)
             {
+                // NOLINTBEGIN
                 type = std::get<size_t>(properties.at("Type"));
                 protocol = std::get<size_t>(properties.at("Protocol"));
                 address =
                     std::get<std::vector<uint8_t>>(properties.at("Address"));
+                // NOLINTEND
             }
         }
 
-        if (uuid.empty() || address.empty() || !type)
+        if (uuid.empty() || address.empty() || (type == 0))
         {
             return;
         }
@@ -123,7 +125,7 @@ void MctpDiscovery::populateMctpInfo(const dbus::InterfaceMap& interfaces,
                     std::get<std::string>(properties.at("MediumType"));
                 auto networkId = std::get<size_t>(properties.at("NetworkId"));
                 if (std::find(mctpTypes.begin(), mctpTypes.end(),
-                              mctp_vdm::MessageType) != mctpTypes.end())
+                              mctp_vdm::messageType) != mctpTypes.end())
                 {
                     handler.registerMctpEndpoint(eid, type, protocol, address);
                     mctpInfos.emplace_back(

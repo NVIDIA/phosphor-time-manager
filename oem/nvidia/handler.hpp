@@ -101,8 +101,7 @@ class Handler
                      uint8_t numRetries = numCommandRetries,
                      std::chrono::milliseconds responseTimeOut =
                          std::chrono::milliseconds(5000)) :
-        event(event),
-        instanceIdMgr(instanceIdMgr), sockManager(sockManager),
+        event(event), instanceIdMgr(instanceIdMgr), sockManager(sockManager),
         instanceIdExpiryInterval(instanceIdExpiryInterval),
         numRetries(numRetries), responseTimeOut(responseTimeOut)
     {}
@@ -145,10 +144,12 @@ class Handler
                 // Call response handler with an empty response to indicate no
                 // response
                 responseHandler(key.eid, nullptr, 0);
+                // NOLINTBEGIN
                 this->removeRequestContainer.emplace(
                     key, std::make_unique<sdeventplus::source::Defer>(
                              event, std::bind(&Handler::removeRequestEntry,
                                               this, key)));
+                // NOLINTEND
             }
             else
             {
@@ -165,9 +166,9 @@ class Handler
         auto timer = std::make_unique<sdbusplus::Timer>(
             event.get(), instanceIdExpiryCallBack);
 
-        handlers.emplace(key, std::make_tuple(std::move(request),
-                                              std::move(responseHandler),
-                                              std::move(timer)));
+        handlers.emplace(
+            key, std::make_tuple(std::move(request), std::move(responseHandler),
+                                 std::move(timer)));
         return runRegisteredRequest(eid);
     }
 
@@ -252,10 +253,10 @@ class Handler
             }
             // Call responseHandler after erase it from the handlers to avoid
             // starting it again in runRegisteredRequest()
-            auto unique_handler = std::move(responseHandler);
+            auto uniqueHandler = std::move(responseHandler);
             instanceIdMgr.markFree(key.eid, key.instanceId);
             handlers.erase(key);
-            unique_handler(eid, response, respMsgLen);
+            uniqueHandler(eid, response, respMsgLen);
         }
         else
         {
@@ -268,7 +269,7 @@ class Handler
     }
 
   private:
-    int fd; //!< file descriptor of MCTP communications socket
+    int fd{}; //!< file descriptor of MCTP communications socket
     sdeventplus::Event& event; //!< reference to daemon's main event loop
     mctp_vdm::InstanceIdMgr& instanceIdMgr; //!< reference to Requester object
     mctp_socket::Manager& sockManager;
@@ -359,6 +360,7 @@ struct SendRecvMctpVdmMsg
 
     /** @brief Returning false to make await_suspend() to be called.
      */
+    // NOLINTNEXTLINE
     bool await_ready() noexcept
     {
         return false;
@@ -369,6 +371,7 @@ struct SendRecvMctpVdmMsg
      * as call back function for the event when MCTP VDM response message
      * received.
      */
+    // NOLINTNEXTLINE
     bool await_suspend(std::coroutine_handle<> handle) noexcept
     {
         if (responseMsg == nullptr || responseLen == nullptr)
@@ -376,14 +379,14 @@ struct SendRecvMctpVdmMsg
             rc = static_cast<int>(mctp_vdm::CompletionCodes::ErrInvalidData);
             return false;
         }
-
+        // NOLINTNEXTLINE
         auto requestMsg = reinterpret_cast<mctp_vdm::Message*>(request.data());
         rc = handler.registerRequest(
             eid, requestMsg->hdr.instanceId, requestMsg->hdr.msgType,
             requestMsg->hdr.commandCode, std::move(request),
             std::move(
-                std::bind_front(&SendRecvMctpVdmMsg::HandleResponse, this)));
-        if (rc)
+                std::bind_front(&SendRecvMctpVdmMsg::handleResponse, this)));
+        if (rc != 0U)
         {
             lg2::error("registerRequest failed, rc={RC}", "RC",
                        static_cast<unsigned>(rc));
@@ -397,6 +400,7 @@ struct SendRecvMctpVdmMsg
     /** @brief Called by co_await operator to get return value when awaitable
      * object completed.
      */
+    // NOLINTNEXTLINE
     uint8_t await_resume() const noexcept
     {
         return rc;
@@ -409,8 +413,7 @@ struct SendRecvMctpVdmMsg
                        mctp::Request& request,
                        const mctp_vdm::Message** responseMsg,
                        size_t* responseLen) :
-        handler(handler),
-        eid(eid), request(request), responseMsg(responseMsg),
+        handler(handler), eid(eid), request(request), responseMsg(responseMsg),
         responseLen(responseLen),
         rc(static_cast<int>(mctp_vdm::CompletionCodes::ErrGeneral))
     {}
@@ -420,10 +423,10 @@ struct SendRecvMctpVdmMsg
      * the response pointer in parameter becomes invalid when coroutine is
      * resumed.
      */
-    void HandleResponse(uint8_t eid, const mctp_vdm::Message* response,
+    void handleResponse(uint8_t eid, const mctp_vdm::Message* response,
                         size_t length)
     {
-        if (response == nullptr || !length)
+        if (response == nullptr || (length == 0U))
         {
             lg2::error("No response received, EID={EID}", "EID", eid);
             rc = static_cast<int>(mctp_vdm::CompletionCodes::ErrGeneral);
@@ -442,6 +445,7 @@ struct SendRecvMctpVdmMsg
  *
  * A coroutine return_object supports nesting coroutine
  */
+// NOLINTBEGIN
 struct Coroutine
 {
     /** @brief The nested struct named 'promise_type' which is needed for
@@ -457,7 +461,7 @@ struct Coroutine
 
         /** @brief For holding return value of coroutine
          */
-        uint8_t data;
+        uint8_t data{};
 
         bool detached = false;
 
@@ -500,14 +504,14 @@ struct Coroutine
                 std::coroutine_handle<> await_suspend(
                     std::coroutine_handle<promise_type> h) noexcept
                 {
-                    auto parent_handle = h.promise().parent_handle;
+                    auto parentHandle = h.promise().parent_handle;
                     if (h.promise().detached)
                     {
                         h.destroy();
                     }
-                    if (parent_handle)
+                    if (parentHandle)
                     {
-                        return parent_handle;
+                        return parentHandle;
                     }
                     return std::noop_coroutine();
                 }
@@ -524,13 +528,14 @@ struct Coroutine
          */
         void return_value(uint8_t value) noexcept
         {
-            data = std::move(value);
+            data = value;
         }
     };
 
     /** @brief Called by co_await to check if it needs to be
      * suspened.
      */
+    // NOLINTNEXTLINE
     bool await_ready() const noexcept
     {
         return handle.done();
@@ -541,7 +546,7 @@ struct Coroutine
      */
     uint8_t await_resume() const noexcept
     {
-        return std::move(handle.promise().data);
+        return handle.promise().data;
     }
 
     /** @brief Called when the coroutine itself is being suspended. The
@@ -585,7 +590,7 @@ struct Coroutine
      */
     mutable std::coroutine_handle<promise_type> handle;
 };
-
+// NOLINTEND
 } // namespace requester
 
 } // namespace mctp_vdm

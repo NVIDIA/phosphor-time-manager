@@ -15,17 +15,15 @@ ErotTimeManager::ErotTimeManager(
     sdbusplus::bus::bus& bus, sdeventplus::Event& event,
     mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
     mctp_socket::Handler& sockHandler, mctp_vdm::InstanceIdMgr& instanceIdMgr) :
-    bus(bus),
-    event(event), reqHandler(reqHandler), sockHandler(sockHandler),
-    instanceIdMgr(instanceIdMgr)
+    bus(bus), event(event), reqHandler(reqHandler), sockHandler(sockHandler),
+    instanceIdMgr(instanceIdMgr), timerFd(timerfd_create(CLOCK_REALTIME, 0))
 {
-    timerFd = timerfd_create(CLOCK_REALTIME, 0);
     if (timerFd == -1)
     {
         auto error = errno;
         lg2::error("Failed to create timerfd: {ERRNO}", "ERRNO", error);
-        throw std::runtime_error("Failed to create timerfd, errno="s +
-                                 std::strerror(error));
+        throw std::runtime_error(
+            "Failed to create timerfd, errno="s + std::strerror(error));
     }
 
     // Choose the MAX time that is possible to avoid misfires.
@@ -35,20 +33,22 @@ ErotTimeManager::ErotTimeManager(
          0},    // Initial expiration
     };
 
-    auto rc = timerfd_settime(timerFd,
-                              TFD_TIMER_ABSTIME | TFD_TIMER_CANCEL_ON_SET,
-                              &maxTime, nullptr);
+    auto rc =
+        timerfd_settime(timerFd, TFD_TIMER_ABSTIME | TFD_TIMER_CANCEL_ON_SET,
+                        &maxTime, nullptr);
     if (rc != 0)
     {
         auto error = errno;
         lg2::error("Failed to set timerfd: {ERRNO}", "ERRNO", error);
-        throw std::runtime_error("Failed to set timerfd, errno="s +
-                                 std::strerror(error));
+        throw std::runtime_error(
+            "Failed to set timerfd, errno="s + std::strerror(error));
     }
 
-    auto mcTimeChangeCallback = std::bind(
-        &ErotTimeManager::handleTimeChange, this, std::placeholders::_1,
-        std::placeholders::_2, std::placeholders::_3);
+    auto mcTimeChangeCallback = [this](auto&& pH1, auto&& pH2, auto&& pH3) {
+        handleTimeChange(std::forward<decltype(pH1)>(pH1),
+                         std::forward<decltype(pH2)>(pH2),
+                         std::forward<decltype(pH3)>(pH3));
+    };
 
     // Subscribe for time change event and invoke callback
     mcTimeChangeIO = std::make_unique<IO>(event, timerFd, EPOLLIN,
@@ -80,10 +80,8 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
                     lg2::info(" Setting ERoT time already in progress..");
                     return;
                 }
-                else
-                {
-                    setErotTimeHandle.destroy();
-                }
+
+                setErotTimeHandle.destroy();
             }
 
             // Current time since the epoch in microseconds
@@ -108,9 +106,8 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
     }
 }
 
-mctp_vdm::requester::Coroutine
-    ErotTimeManager::setTimeOnErots(uint64_t epochElapsedTime,
-                                    std::vector<uint8_t> eids)
+mctp_vdm::requester::Coroutine ErotTimeManager::setTimeOnErots(
+    uint64_t epochElapsedTime, const std::vector<uint8_t>& eids)
 {
     if (eids.empty())
     {
@@ -143,11 +140,13 @@ mctp_vdm::requester::Coroutine
     sockHandler.deactivateSockets();
 }
 
-mctp_vdm::requester::Coroutine
-    ErotTimeManager::setTimeOnErot(uint8_t eid, uint64_t epochElapsedTime)
+mctp_vdm::requester::Coroutine ErotTimeManager::setTimeOnErot(
+    uint8_t eid, uint64_t epochElapsedTime)
 {
-    mctp::Request request(sizeof(mctp_vdm::MsgHeader) +
-                          sizeof(epochElapsedTime));
+    mctp::Request request(
+        sizeof(mctp_vdm::MsgHeader) + sizeof(epochElapsedTime));
+
+    // NOLINTNEXTLINE
     auto requestMsg = reinterpret_cast<mctp_vdm::MsgHeader*>(request.data());
     requestMsg->iana = htobe32(nvidiaIANA);
     requestMsg->request = 1;
@@ -157,6 +156,7 @@ mctp_vdm::requester::Coroutine
     requestMsg->msgVersion = nvidiaMsgVersion;
     auto iter = request.begin() + sizeof(mctp_vdm::MsgHeader);
     auto beEpochElapsedTime = htobe64(epochElapsedTime);
+    // NOLINTNEXTLINE   
     std::copy_n(reinterpret_cast<uint8_t*>(&beEpochElapsedTime),
                 sizeof(beEpochElapsedTime), iter);
 
@@ -166,7 +166,7 @@ mctp_vdm::requester::Coroutine
     auto rc = co_await mctp_vdm::requester::SendRecvMctpVdmMsg<
         mctp_vdm::requester::Handler<mctp_vdm::requester::Request>>(
         reqHandler, eid, request, &responseMsg, &responseLen);
-    if (rc)
+    if (rc != 0U)
     {
         co_return rc;
     }
@@ -209,7 +209,7 @@ mctp_vdm::requester::Coroutine ErotTimeManager::handleMctpEndpointsTask()
         const auto& mctpInfos = queuedMctpInfos.front();
         std::vector<uint8_t> eids{};
 
-        for (auto& mctpInfo : mctpInfos)
+        for (const auto& mctpInfo : mctpInfos)
         {
             auto eid = std::get<0>(mctpInfo);
             eids.emplace_back(eid);
@@ -227,7 +227,7 @@ void ErotTimeManager::handleMctpEndpoints(const mctp::Infos& mctpInfos)
 {
     // Populate MCTP info to update EROT's when BMC time changes
     std::vector<uint8_t> eids;
-    for (auto& mctpInfo : mctpInfos)
+    for (const auto& mctpInfo : mctpInfos)
     {
         auto eid = std::get<0>(mctpInfo);
         auto uuid = std::get<1>(mctpInfo);
@@ -313,9 +313,9 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
         reply.read(objects);
         for (const auto& [objectPath, interfaces] : objects)
         {
-            if (interfaces.contains(mctp::UUIDInterface))
+            if (interfaces.contains(mctp::uuidInterface))
             {
-                const auto& properties = interfaces.at(mctp::UUIDInterface);
+                const auto& properties = interfaces.at(mctp::uuidInterface);
                 if (properties.contains("UUID"))
                 {
                     uuid = std::get<std::string>(properties.at("UUID"));
@@ -392,15 +392,14 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
                 Critical);
     asioConnection->async_method_call(
         [](boost::system::error_code ec) {
-        if (ec)
-        {
-            lg2::error("Error while logging message registry: ",
-                       "ERROR_MESSAGE", ec.message());
-            return;
-        }
-    },
+            if (ec)
+            {
+                lg2::error("Error while logging message registry: ",
+                           "ERROR_MESSAGE", ec.message());
+                return;
+            }
+        },
         "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
         "xyz.openbmc_project.Logging.Create", "Create",
         "ResourceEvent.1.0.ResourceErrorsDetected", severity, addData);
-    return;
 }

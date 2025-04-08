@@ -47,8 +47,7 @@ class RequestRetryTimer
     explicit RequestRetryTimer(sdeventplus::Event& event, uint8_t numRetries,
                                std::chrono::milliseconds timeout) :
 
-        event(event),
-        numRetries(numRetries), timeout(timeout),
+        event(event), numRetries(numRetries), timeout(timeout),
         timer(event.get(), std::bind_front(&RequestRetryTimer::callback, this))
     {}
 
@@ -59,14 +58,14 @@ class RequestRetryTimer
     int start()
     {
         auto rc = send();
-        if (rc)
+        if (rc != 0)
         {
             return rc;
         }
 
         try
         {
-            if (numRetries)
+            if (numRetries != 0U)
             {
                 timer.start(duration_cast<std::chrono::microseconds>(timeout),
                             true);
@@ -85,7 +84,7 @@ class RequestRetryTimer
     void stop()
     {
         auto rc = timer.stop();
-        if (rc)
+        if (rc != 0)
         {
             lg2::error("Failed to stop the request timer. RC={RC}", "RC",
                        unsigned(rc));
@@ -108,7 +107,7 @@ class RequestRetryTimer
     /** @brief Callback function invoked when the timeout happens */
     void callback()
     {
-        if (numRetries--)
+        if ((numRetries--) != 0U)
         {
             send();
         }
@@ -136,7 +135,7 @@ class Request final : public RequestRetryTimer
     Request(Request&&) = default;
     Request& operator=(const Request&) = delete;
     Request& operator=(Request&&) = default;
-    ~Request() = default;
+    ~Request() override = default;
 
     /** @brief Constructor
      *
@@ -150,8 +149,8 @@ class Request final : public RequestRetryTimer
     explicit Request(int fd, uint8_t eid, sdeventplus::Event& event,
                      mctp::Request&& requestMsg, uint8_t numRetries,
                      std::chrono::milliseconds timeout) :
-        RequestRetryTimer(event, numRetries, timeout),
-        fd(fd), eid(eid), requestMsg(std::move(requestMsg))
+        RequestRetryTimer(event, numRetries, timeout), fd(fd), eid(eid),
+        requestMsg(std::move(requestMsg))
     {}
 
   private:
@@ -163,13 +162,13 @@ class Request final : public RequestRetryTimer
      *
      *  @return return  0 on success and -errno on failure
      */
-    int send() const
+    int send() const override
     {
-        utils::printBuffer(utils::Tx, requestMsg);
+        // NOLINTBEGIN
+        utils::printBuffer(utils::tx, requestMsg);
 
         uint8_t hdr[3] = {LIBMCTP_TAG_OWNER_MASK | MCTP_TAG_VDM, eid,
-                          mctp_vdm::MessageType};
-
+                          mctp_vdm::messageType};
         struct iovec iov[2];
         iov[0].iov_base = hdr;
         iov[0].iov_len = sizeof(hdr);
@@ -191,6 +190,7 @@ class Request final : public RequestRetryTimer
             return returnCode;
         }
         return returnCode;
+        // NOLINTEND
     }
 };
 

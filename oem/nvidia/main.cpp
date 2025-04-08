@@ -26,17 +26,18 @@ int main(int /*argc*/, char** /*argv*/)
     auto erotTimeManager = std::make_unique<ErotTimeManager>(
         bus, event, reqHandler, sockHandler, instanceIdMgr);
 
+    // NOLINTBEGIN
     std::unique_ptr<MctpDiscovery> mctpDiscoveryHandler =
         std::make_unique<MctpDiscovery>(
             bus, sockHandler,
             std::initializer_list<mctp_vdm::MctpDiscoveryHandlerIntf*>{
                 erotTimeManager.get()});
-
+    // NOLINTEND
     bus.attach_event(event.get(), SD_EVENT_PRIORITY_NORMAL);
 
     auto returnCode = event.loop();
 
-    if (returnCode)
+    if (returnCode != 0)
     {
         exit(EXIT_FAILURE);
     }

@@ -48,8 +48,7 @@ class Handler
         sdeventplus::Event& event,
         mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& handler,
         mctp_socket::Manager& manager) :
-        event(event),
-        handler(handler), manager(manager)
+        event(event), handler(handler), manager(manager)
     {}
 
     void registerMctpEndpoint(uint8_t eid, int type, int protocol,

@@ -1,26 +1,25 @@
 #pragma once
 
-#include "stddef.h"
-#include "stdint.h"
-
+#include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace mapper
 {
-constexpr auto Service = "xyz.openbmc_project.ObjectMapper";
-constexpr auto Path = "/xyz/openbmc_project/object_mapper";
-constexpr auto Interface = "xyz.openbmc_project.ObjectMapper";
+constexpr auto service = "xyz.openbmc_project.ObjectMapper";
+constexpr auto path = "/xyz/openbmc_project/object_mapper";
+constexpr auto interface = "xyz.openbmc_project.ObjectMapper";
 } // namespace mapper
 
 namespace mctp
 {
-constexpr auto UUIDInterface{"xyz.openbmc_project.Common.UUID"};
+constexpr auto uuidInterface{"xyz.openbmc_project.Common.UUID"};
 }
 
 namespace mctp_vdm
 {
 // Message Type for Vendor defined - IANA
-constexpr uint8_t MessageType = 0x7F;
+constexpr uint8_t messageType = 0x7F;
 
 // MCTP VDM header
 constexpr uint32_t nvidiaIANA = 5703;
@@ -37,6 +36,6 @@ constexpr uint8_t numCommandRetries = 3;
 
 namespace pldm
 {
-constexpr auto Service = "xyz.openbmc_project.PLDM";
-constexpr auto Path = "/";
+constexpr auto service = "xyz.openbmc_project.PLDM";
+constexpr auto path = "/";
 } // namespace pldm

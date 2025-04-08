@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
 #include <unistd.h>
 
 #include <boost/asio.hpp>
@@ -23,7 +22,7 @@ struct CustomFD
     CustomFD(CustomFD&&) = delete;
     CustomFD& operator=(CustomFD&&) = delete;
 
-    CustomFD(int fd) : fd(fd) {}
+    explicit CustomFD(int fd) : fd(fd) {}
 
     ~CustomFD()
     {
@@ -42,8 +41,8 @@ struct CustomFD
     int fd = -1;
 };
 
-constexpr bool Tx = true;
-constexpr bool Rx = false;
+constexpr bool tx = true;
+constexpr bool rx = false;
 
 /** @brief Print the buffer
  *

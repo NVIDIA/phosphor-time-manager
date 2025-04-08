@@ -38,10 +38,8 @@ int Handler::activateSockets(const std::vector<uint8_t>& eids)
             {
                 continue;
             }
-            else
-            {
-                manager.registerEndpoint(eid, fd);
-            }
+
+            manager.registerEndpoint(eid, fd);
         }
         else
         {
@@ -90,9 +88,9 @@ int Handler::initSocket(int type, int protocol,
                 fd, static_cast<void*>(requestMsg.data()), peekedLength, 0);
             if (recvDataLength == peekedLength)
             {
-                utils::printBuffer(utils::Rx, requestMsg);
+                utils::printBuffer(utils::rx, requestMsg);
 
-                if (mctp_vdm::MessageType != requestMsg[2])
+                if (mctp_vdm::messageType != requestMsg[2])
                 {
                     // Skip this message and continue.
                 }
@@ -124,8 +122,8 @@ int Handler::initSocket(int type, int protocol,
     auto fd = std::make_unique<utils::CustomFD>(sockFd);
 
     // /* Initiate a connection to the socket */
-    struct sockaddr_un addr
-    {};
+    // NOLINTBEGIN
+    struct sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
     memcpy(addr.sun_path, pathName.data(), pathName.size());
     rc = connect(sockFd, reinterpret_cast<struct sockaddr*>(&addr),
@@ -137,10 +135,10 @@ int Handler::initSocket(int type, int protocol,
                    strerror(-rc));
         return rc;
     }
-
+    // NOLINTEND
     /* Register for MCTP VDM message type */
-    ssize_t result = write(sockFd, &mctp_vdm::MessageType,
-                           sizeof(mctp_vdm::MessageType));
+    ssize_t result =
+        write(sockFd, &mctp_vdm::messageType, sizeof(mctp_vdm::messageType));
     if (result == -1)
     {
         rc = -errno;
@@ -161,16 +159,20 @@ void Handler::processRxMsg(const std::vector<uint8_t>& requestMsg)
     using type = uint8_t;
     using tag_owner_and_tag = uint8_t;
     uint8_t eid = requestMsg[1];
-    auto msg = reinterpret_cast<const mctp_vdm::Message*>(
+    // NOLINTBEGIN
+    const auto* msg = reinterpret_cast<const mctp_vdm::Message*>(
         requestMsg.data() + sizeof(tag_owner_and_tag) + sizeof(eid) +
         sizeof(type));
+        // NOLINTEND
 
     if (msg->hdr.request == 0)
     {
-        auto response = reinterpret_cast<const mctp_vdm::Message*>(msg);
-        size_t responseLen = requestMsg.size() -
-                             sizeof(struct mctp_vdm::MsgHeader) - sizeof(eid) -
-                             sizeof(type) - sizeof(tag_owner_and_tag);
+        // NOLINTBEGIN
+        const auto* response = reinterpret_cast<const mctp_vdm::Message*>(msg);
+        size_t responseLen =
+            requestMsg.size() - sizeof(struct mctp_vdm::MsgHeader) -
+            sizeof(eid) - sizeof(type) - sizeof(tag_owner_and_tag);
+        // NOLINTEND
         handler.handleResponse(eid, msg->hdr.instanceId, msg->hdr.msgType,
                                msg->hdr.commandCode, response, responseLen);
     }
