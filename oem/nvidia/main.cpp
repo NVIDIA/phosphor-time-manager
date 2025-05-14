@@ -1,7 +1,10 @@
+#include "../config.h"
+
 #include "erot_time_manager.hpp"
 #include "handler.hpp"
 #include "instance_id.hpp"
 #include "request.hpp"
+#include "socket_handler.hpp"
 #include "types.hpp"
 
 #include <sdbusplus/bus.hpp>
@@ -16,18 +19,23 @@ int main(int /*argc*/, char** /*argv*/)
 
     using namespace mctp_vdm;
 
-    // MCTP VDM requester handler
-    requester::Handler<requester::Request> reqHandler(event, instanceIdMgr,
-                                                      sockManager);
+#ifdef MCTP_IN_KERNEL
+    using TRequest = mctp_vdm::requester::InKernelRequest;
+    using TSocketHandler = mctp_socket::InKernelHandler;
+#else
+    using TRequest = mctp_vdm::requester::DaemonRequest;
+    using TSocketHandler = mctp_socket::DaemonHandler;
+#endif
 
-    mctp_socket::Handler sockHandler(event, reqHandler, sockManager);
+    requester::Handler<TRequest> reqHandler(event, instanceIdMgr, sockManager);
 
-    // ERoT time manager
-    auto erotTimeManager = std::make_unique<ErotTimeManager>(
+    TSocketHandler sockHandler(event, reqHandler, sockManager);
+
+    auto erotTimeManager = std::make_unique<ErotTimeManager<TRequest>>(
         bus, event, reqHandler, sockHandler, instanceIdMgr);
 
-    std::unique_ptr<MctpDiscovery> mctpDiscoveryHandler =
-        std::make_unique<MctpDiscovery>(
+    std::unique_ptr<MctpDiscovery<TRequest>> mctpDiscoveryHandler =
+        std::make_unique<MctpDiscovery<TRequest>>(
             bus, sockHandler,
             std::initializer_list<mctp_vdm::MctpDiscoveryHandlerIntf*>{
                 erotTimeManager.get()});

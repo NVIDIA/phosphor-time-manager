@@ -1,8 +1,12 @@
 #include "erot_time_manager.hpp"
 
+#include "../config.h"
+
 #include "mctp_vdm_completion_codes.hpp"
 #include "types.hpp"
 #include "utils.hpp"
+
+#include <fmt/format.h>
 
 #include <xyz/openbmc_project/Logging/Entry/server.hpp>
 
@@ -11,10 +15,12 @@
 using namespace mctp_vdm;
 using namespace std::literals;
 
-ErotTimeManager::ErotTimeManager(
-    sdbusplus::bus::bus& bus, sdeventplus::Event& event,
-    mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
-    mctp_socket::Handler& sockHandler, mctp_vdm::InstanceIdMgr& instanceIdMgr) :
+template <typename T>
+ErotTimeManager<T>::ErotTimeManager(sdbusplus::bus::bus& bus,
+                                    sdeventplus::Event& event,
+                                    mctp_vdm::requester::Handler<T>& reqHandler,
+                                    mctp_socket::Handler<T>& sockHandler,
+                                    mctp_vdm::InstanceIdMgr& instanceIdMgr) :
     bus(bus),
     event(event), reqHandler(reqHandler), sockHandler(sockHandler),
     instanceIdMgr(instanceIdMgr)
@@ -55,12 +61,15 @@ ErotTimeManager::ErotTimeManager(
                                           std::move(mcTimeChangeCallback));
 }
 
-ErotTimeManager::~ErotTimeManager()
+template <typename T>
+ErotTimeManager<T>::~ErotTimeManager()
 {
     close(timerFd);
 }
 
-void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
+template <typename T>
+void ErotTimeManager<T>::handleTimeChange(IO& /*io*/, int fd,
+                                          uint32_t /*revents*/)
 {
     uint64_t expirations = 0;
 
@@ -124,9 +133,10 @@ void ErotTimeManager::handleTimeChange(IO& /*io*/, int fd, uint32_t /*revents*/)
     }
 }
 
+template <typename T>
 mctp_vdm::requester::Coroutine
-    ErotTimeManager::setTimeOnErots(uint64_t epochElapsedTime,
-                                    std::vector<uint8_t> eids)
+    ErotTimeManager<T>::setTimeOnErots(uint64_t epochElapsedTime,
+                                       std::vector<uint8_t> eids)
 {
     if (eids.empty())
     {
@@ -142,7 +152,6 @@ mctp_vdm::requester::Coroutine
         co_return rc;
     }
 
-    // Iterate through all the endpoints and set external timestamp
     for (const auto& eid : eids)
     {
         auto rc = co_await setTimeOnErot(eid, epochElapsedTime);
@@ -159,8 +168,9 @@ mctp_vdm::requester::Coroutine
     sockHandler.deactivateSockets();
 }
 
+template <typename T>
 mctp_vdm::requester::Coroutine
-    ErotTimeManager::setTimeOnErot(uint8_t eid, uint64_t epochElapsedTime)
+    ErotTimeManager<T>::setTimeOnErot(uint8_t eid, uint64_t epochElapsedTime)
 {
     mctp::Request request(sizeof(mctp_vdm::MsgHeader) +
                           sizeof(epochElapsedTime));
@@ -180,8 +190,8 @@ mctp_vdm::requester::Coroutine
     size_t responseLen = 0;
 
     auto rc = co_await mctp_vdm::requester::SendRecvMctpVdmMsg<
-        mctp_vdm::requester::Handler<mctp_vdm::requester::Request>>(
-        reqHandler, eid, request, &responseMsg, &responseLen);
+        mctp_vdm::requester::Handler<T>>(reqHandler, eid, request, &responseMsg,
+                                         &responseLen);
     if (rc)
     {
         co_return rc;
@@ -199,7 +209,8 @@ mctp_vdm::requester::Coroutine
     co_return responseMsg->payload[0];
 }
 
-mctp_vdm::requester::Coroutine ErotTimeManager::handleMctpEndpointsTask()
+template <typename T>
+mctp_vdm::requester::Coroutine ErotTimeManager<T>::handleMctpEndpointsTask()
 {
     uint64_t elapsedTime = 0;
     try
@@ -239,7 +250,8 @@ mctp_vdm::requester::Coroutine ErotTimeManager::handleMctpEndpointsTask()
     co_return static_cast<int>(mctp_vdm::CompletionCodes::Success);
 }
 
-void ErotTimeManager::handleMctpEndpoints(const mctp::Infos& mctpInfos)
+template <typename T>
+void ErotTimeManager<T>::handleMctpEndpoints(const mctp::Infos& mctpInfos)
 {
     // Populate MCTP info to update EROT's when BMC time changes
     std::vector<uint8_t> eids;
@@ -299,7 +311,8 @@ void ErotTimeManager::handleMctpEndpoints(const mctp::Infos& mctpInfos)
     }
 }
 
-void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
+template <typename T>
+void ErotTimeManager<T>::createErrorLog(uint8_t eid, uint8_t rc)
 {
     mctp::UUID mctpUUID{};
 
@@ -388,7 +401,6 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
     {
         lg2::info("Command to set external timestamp unsupported on EID={EID}",
                   "EID", eid);
-        // Remove the EID that doesn't support this command.
         mctpInfoMap.erase(mctpUUID);
         return;
     }
@@ -399,11 +411,9 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
     }
 
     using namespace sdbusplus::xyz::openbmc_project::Logging::server;
-    // using Level = ;
     std::map<std::string, std::string> addData;
     addData["REDFISH_MESSAGE_ID"] = "ResourceEvent.1.0.ResourceErrorsDetected";
     addData["REDFISH_MESSAGE_ARGS"] = (erotName + "," + message);
-    // Level level = Level::Critical;
     addData["xyz.openbmc_project.Logging.Entry.Resolution"] = resolution;
 
     auto& asioConnection = utils::DBusHandler::getAsioConnection();
@@ -425,3 +435,12 @@ void ErotTimeManager::createErrorLog(uint8_t eid, uint8_t rc)
         "ResourceEvent.1.0.ResourceErrorsDetected", severity, addData);
     return;
 }
+
+// Explicit template instantiations
+#ifdef MCTP_IN_KERNEL
+using TRequest = mctp_vdm::requester::InKernelRequest;
+#else
+using TRequest = mctp_vdm::requester::DaemonRequest;
+#endif
+
+template class ErotTimeManager<TRequest>;

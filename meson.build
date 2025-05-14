@@ -45,6 +45,10 @@ conf_data.set('DEFAULT_TIME_MODE', get_option('default_time_mode'))
 conf_data.set_quoted('DEFAULT_TIME_SYNC_OBJECT_PATH', get_option('default_time_sync_object_path'))
 conf_data.set('EROT_TIME_SYNC_INTERVAL', get_option('erot_time_sync_interval'))
 
+if get_option('enable-in-kernel-mctp').enabled()
+    conf_data.set('MCTP_IN_KERNEL', 0)
+endif
+
 configure_file(output: 'config.h', configuration: conf_data)
 
 

@@ -28,4 +28,27 @@ void printBuffer(bool isTx, const std::vector<uint8_t>& buffer)
     }
 }
 
+void printBuffer(bool isTx, const std::vector<uint8_t>& buffer, uint8_t eid)
+{
+    if (!buffer.empty())
+    {
+        std::ostringstream tempStream;
+        for (int byte : buffer)
+        {
+            tempStream << std::setfill('0') << std::setw(2) << std::hex << byte
+                       << " ";
+        }
+        if (isTx)
+        {
+            lg2::info("Tx to EID {EID}: {TX}", "EID", static_cast<int>(eid),
+                      "TX", tempStream.str());
+        }
+        else
+        {
+            lg2::info("Rx from EID {EID}: {RX}", "EID", static_cast<int>(eid),
+                      "RX", tempStream.str());
+        }
+    }
+}
+
 } // namespace utils

@@ -59,6 +59,7 @@ using namespace sdeventplus::source;
  *  communicate with the endpoint. The lookup APIs are used when processing MCTP
  *  VDM Rx messages and when sending MCTP VDM Tx messages.
  */
+template <typename T = mctp_vdm::requester::RequestRetryTimer>
 class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
 {
   public:
@@ -76,11 +77,11 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
      *  @param[in] sockHandler - MCTP demux daemon socket handler
      *  @param[in] instanceIdMgr - Instance ID Manager
      */
-    explicit ErotTimeManager(
-        sdbusplus::bus::bus& bus, sdeventplus::Event& event,
-        mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
-        mctp_socket::Handler& sockHandler,
-        mctp_vdm::InstanceIdMgr& instanceIdMgr);
+    explicit ErotTimeManager(sdbusplus::bus::bus& bus,
+                             sdeventplus::Event& event,
+                             mctp_vdm::requester::Handler<T>& reqHandler,
+                             mctp_socket::Handler<T>& sockHandler,
+                             mctp_vdm::InstanceIdMgr& instanceIdMgr);
 
     mctp_vdm::requester::Coroutine setTimeOnErots(uint64_t epochElapsedTime,
                                                   std::vector<uint8_t> eids);
@@ -100,9 +101,9 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     /** @brief reference to the event loop */
     sdeventplus::Event& event;
 
-    mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler;
+    mctp_vdm::requester::Handler<T>& reqHandler;
 
-    mctp_socket::Handler& sockHandler;
+    mctp_socket::Handler<T>& sockHandler;
 
     mctp::MctpInfoMap mctpInfoMap;
 

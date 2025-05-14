@@ -33,3 +33,10 @@ option(
     value: 60,
     description: 'The minimum time, in seconds, required between consecutive attempts to synchronize the ERoT clock.'
 )
+
+option(
+    'enable-in-kernel-mctp',
+    type: 'feature',
+    value: 'disabled',
+    description: 'Use the in-kernel MCTP stack instead of the demux daemon'
+)

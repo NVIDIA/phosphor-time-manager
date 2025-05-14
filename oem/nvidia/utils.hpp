@@ -54,6 +54,16 @@ constexpr bool Rx = false;
  */
 void printBuffer(bool isTx, const std::vector<uint8_t>& buffer);
 
+/** @brief Print the buffer with EID information
+ *
+ *  @param[in] isTx - True if the buffer is an outgoing MCTP VDM message,
+                       false if the buffer is an incoming MCTP VDM message
+ *  @param[in] buffer - Buffer to print
+ *  @param[in] eid - Endpoint ID associated with the message
+ *
+ */
+void printBuffer(bool isTx, const std::vector<uint8_t>& buffer, uint8_t eid);
+
 /**
  *  @class DBusHandler
  *
