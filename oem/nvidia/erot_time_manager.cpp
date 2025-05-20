@@ -274,21 +274,26 @@ void ErotTimeManager::handleMctpEndpoints(const mctp::Infos& mctpInfos)
         if (setErotTimeHandle.done())
         {
             setErotTimeHandle.destroy();
+            setErotTimeHandle = nullptr;
 
+            // Create new coroutine after cleanup
             auto co = handleMctpEndpointsTask();
             setErotTimeHandle = co.handle;
             if (setErotTimeHandle.done())
             {
+                setErotTimeHandle.destroy();
                 setErotTimeHandle = nullptr;
             }
         }
     }
     else
     {
+        // No active coroutine, create new one
         auto co = handleMctpEndpointsTask();
         setErotTimeHandle = co.handle;
         if (setErotTimeHandle.done())
         {
+            setErotTimeHandle.destroy();
             setErotTimeHandle = nullptr;
         }
     }
