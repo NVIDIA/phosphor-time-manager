@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../config.h"
+
 #include "instance_id.hpp"
 #include "mctp_endpoint_discovery.hpp"
 #include "types.hpp"
@@ -60,6 +62,7 @@ using namespace sdeventplus::source;
  *  communicate with the endpoint. The lookup APIs are used when processing MCTP
  *  VDM Rx messages and when sending MCTP VDM Tx messages.
  */
+template <typename T = mctp_vdm::requester::RequestRetryTimer>
 class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
 {
   public:
@@ -77,11 +80,11 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
      *  @param[in] sockHandler - MCTP demux daemon socket handler
      *  @param[in] instanceIdMgr - Instance ID Manager
      */
-    explicit ErotTimeManager(
-        sdbusplus::bus::bus& bus, sdeventplus::Event& event,
-        mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler,
-        mctp_socket::Handler& sockHandler,
-        mctp_vdm::InstanceIdMgr& instanceIdMgr);
+    explicit ErotTimeManager(sdbusplus::bus::bus& bus,
+                             sdeventplus::Event& event,
+                             mctp_vdm::requester::Handler<T>& reqHandler,
+                             mctp_socket::Handler<T>& sockHandler,
+                             mctp_vdm::InstanceIdMgr& instanceIdMgr);
 
     mctp_vdm::requester::Coroutine setTimeOnErots(
         uint64_t epochElapsedTime, const std::vector<uint8_t>& eids);
@@ -101,9 +104,9 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     /** @brief reference to the event loop */
     sdeventplus::Event& event;
 
-    mctp_vdm::requester::Handler<mctp_vdm::requester::Request>& reqHandler;
+    mctp_vdm::requester::Handler<T>& reqHandler;
 
-    mctp_socket::Handler& sockHandler;
+    mctp_socket::Handler<T>& sockHandler;
 
     mctp::MctpInfoMap mctpInfoMap;
 
@@ -120,6 +123,12 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
 
     /** @brief I/O event source to watch for system time changes */
     std::unique_ptr<IO> mcTimeChangeIO = nullptr;
+
+    /** @brief  Tracks the last time the ERoT time synchronization was
+ performed. This is used to enforce a minimum interval between successive
+ synchronization attempts, defined by EROT_TIME_SYNC_INTERVAL.
+ It is updated each time a successful synchronization attempt occurs. */
+    std::chrono::steady_clock::time_point erotTimeSyncLast;
 
     void handleTimeChange(IO& io, int fd, uint32_t revents);
 };

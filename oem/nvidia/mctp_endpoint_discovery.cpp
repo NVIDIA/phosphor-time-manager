@@ -1,5 +1,7 @@
 #include "mctp_endpoint_discovery.hpp"
 
+#include "../config.h"
+
 #include "constants.hpp"
 #include "types.hpp"
 
@@ -16,70 +18,111 @@ namespace mctp_vdm
 
 using namespace dbus;
 
-MctpDiscovery::MctpDiscovery(
-    sdbusplus::bus::bus& bus, mctp_socket::Handler& handler,
+template <typename T>
+MctpDiscovery<T>::MctpDiscovery(
+    // NOLINTBEGIN
+    sdbusplus::bus::bus& bus, mctp_socket::Handler<T>& handler,
     std::initializer_list<MctpDiscoveryHandlerIntf*> list) :
     bus(bus),
     mctpEndpointAddedSignal(
         bus,
         sdbusplus::bus::match::rules::interfacesAdded(
             "/xyz/openbmc_project/mctp"),
-        std::bind_front(&MctpDiscovery::discoverEndpoints, this)),
+        std::bind(std::mem_fn(&MctpDiscovery::discoverEndpoints), this,
+                  std::placeholders::_1)),
     handler(handler), handlers(list)
+    // NOLINTEND
 {
-    dbus::ObjectValueTree objects;
-    std::set<dbus::Service> mctpCtrlServices;
     mctp::Infos mctpInfos;
-
     try
     {
         const dbus::Interfaces ifaceList{"xyz.openbmc_project.MCTP.Endpoint"};
         auto method = bus.new_method_call(mapper::service, mapper::path,
                                           mapper::interface, "GetSubTree");
 
-        method.append("/xyz/openbmc_project/mctp", 0, ifaceList);
-        auto reply = bus.call(method);
-        GetSubTreeResponse getSubTreeResponse;
-        reply.read(getSubTreeResponse);
-        for (const auto& [objPath, mapperServiceMap] : getSubTreeResponse)
+        std::map<std::string, std::map<std::string, std::vector<std::string>>>
+            subtree;
+        bus.call(method).read(subtree);
+
+        if (subtree.empty())
         {
-            for (const auto& [serviceName, interfaces] : mapperServiceMap)
+            lg2::info("No MCTP endpoints found");
+            return;
+        }
+
+        for (const auto& [object, serviceMap] : subtree)
+        {
+            for (const auto& [service, interfaces] : serviceMap)
             {
-                mctpCtrlServices.emplace(serviceName);
+                lg2::info("MCTP discovery: object = {OBJ}, service = {SERVICE}",
+                          "OBJ", object, "SERVICE", service);
+                try
+                {
+                    InterfaceMap ifaceMap;
+
+                    // Always fetch UUID interface
+                    {
+                        PropertyMap uuidMap;
+                        auto uuidProps = bus.new_method_call(
+                            service.c_str(), object.c_str(),
+                            "org.freedesktop.DBus.Properties", "GetAll");
+                        uuidProps.append("xyz.openbmc_project.Common.UUID");
+                        auto uuidResult = bus.call(uuidProps);
+                        uuidResult.read(uuidMap);
+                        ifaceMap["xyz.openbmc_project.Common.UUID"] = uuidMap;
+                    }
+
+                    // Always fetch UnixSocket interface
+                    {
+                        PropertyMap sockMap;
+                        auto sockProps = bus.new_method_call(
+                            service.c_str(), object.c_str(),
+                            "org.freedesktop.DBus.Properties", "GetAll");
+                        sockProps.append(
+                            "xyz.openbmc_project.Common.UnixSocket");
+                        auto sockResult = bus.call(sockProps);
+                        sockResult.read(sockMap);
+                        ifaceMap["xyz.openbmc_project.Common.UnixSocket"] =
+                            sockMap;
+                    }
+
+                    // Always fetch Endpoint interface
+                    {
+                        PropertyMap epMap;
+                        auto epProps = bus.new_method_call(
+                            service.c_str(), object.c_str(),
+                            "org.freedesktop.DBus.Properties", "GetAll");
+                        epProps.append("xyz.openbmc_project.MCTP.Endpoint");
+                        auto epResult = bus.call(epProps);
+                        epResult.read(epMap);
+                        ifaceMap["xyz.openbmc_project.MCTP.Endpoint"] = epMap;
+                    }
+
+                    populateMctpInfo(ifaceMap, mctpInfos);
+                }
+                catch (const std::exception& e)
+                {
+                    lg2::error(
+                        "GetAll properties failed, PATH={PATH}, SERVICE={SERVICE}, ERROR={ERROR}",
+                        "PATH", object.c_str(), "SERVICE", service.c_str(),
+                        "ERROR", e);
+                }
             }
         }
     }
     catch (const std::exception& e)
     {
-        handleMctpEndpoints(mctpInfos);
-        return;
+        lg2::error("Failed to get list of mctp endpoints: {ERROR}", "ERROR", e);
     }
 
-    for (const auto& service : mctpCtrlServices)
-    {
-        dbus::ObjectValueTree objects{};
-        try
-        {
-            auto method = bus.new_method_call(
-                service.c_str(), "/xyz/openbmc_project/mctp",
-                "org.freedesktop.DBus.ObjectManager", "GetManagedObjects");
-            auto reply = bus.call(method);
-            reply.read(objects);
-            for (const auto& [objectPath, interfaces] : objects)
-            {
-                populateMctpInfo(interfaces, mctpInfos);
-            }
-        }
-        catch (const std::exception& e)
-        {
-            continue;
-        }
-    }
+    lg2::info("MCTP discovery: total endpoints found = {COUNT}", "COUNT",
+              mctpInfos.size());
     handleMctpEndpoints(mctpInfos);
 }
 
-void MctpDiscovery::populateMctpInfo(const dbus::InterfaceMap& interfaces,
-                                     mctp::Infos& mctpInfos)
+template <typename T>
+void MctpDiscovery<T>::populateMctpInfo(const dbus::InterfaceMap& interfaces,
+                                        mctp::Infos& mctpInfos)
 {
     mctp::UUID uuid{};
     int type = 0;
@@ -140,7 +183,8 @@ void MctpDiscovery::populateMctpInfo(const dbus::InterfaceMap& interfaces,
     }
 }
 
-void MctpDiscovery::discoverEndpoints(sdbusplus::message::message& msg)
+template <typename T>
+void MctpDiscovery<T>::discoverEndpoints(sdbusplus::message::message& msg)
 {
     mctp::Infos mctpInfos;
 
@@ -153,7 +197,8 @@ void MctpDiscovery::discoverEndpoints(sdbusplus::message::message& msg)
     handleMctpEndpoints(mctpInfos);
 }
 
-void MctpDiscovery::handleMctpEndpoints(const mctp::Infos& mctpInfos)
+template <typename T>
+void MctpDiscovery<T>::handleMctpEndpoints(const mctp::Infos& mctpInfos)
 {
     for (MctpDiscoveryHandlerIntf* handler : handlers)
     {
@@ -163,5 +208,14 @@ void MctpDiscovery::handleMctpEndpoints(const mctp::Infos& mctpInfos)
         }
     }
 }
+
+#ifdef MCTP_IN_KERNEL
+using TRequest = mctp_vdm::requester::InKernelRequest;
+#else
+using TRequest = mctp_vdm::requester::DaemonRequest;
+#endif
+
+// Explicit template instantiations
+template class MctpDiscovery<TRequest>;
 
 } // namespace mctp_vdm
