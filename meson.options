@@ -2,11 +2,17 @@
 
 # command : meson configure -Dfeature_name=enabled
 
-option( 'tests', type : 'feature',
-         value: 'enabled',
-         description: 'Build unit tests'
-      )
-option('oem-nvidia', type: 'feature', description: 'Build NVIDIA ERoT time manager service')
+option(
+    'tests',
+    type: 'feature',
+    value: 'enabled',
+    description: 'Build unit tests',
+)
+option(
+    'oem-nvidia',
+    type: 'feature',
+    description: 'Build NVIDIA ERoT time manager service',
+)
 
 # Commandline variables list
 # Value can be assigned from commandline to below variables
@@ -15,28 +21,31 @@ option('oem-nvidia', type: 'feature', description: 'Build NVIDIA ERoT time manag
 
 # Ex: meson configure -Ddefault_time_mode=Mode::Manual
 
-option ( 'default_time_mode', type : 'combo',
-          choices: ['Mode::Manual', 'Mode::NTP'],
-          value : 'Mode::Manual',
-          description : 'The default time mode')
+option(
+    'default_time_mode',
+    type: 'combo',
+    choices: ['Mode::Manual', 'Mode::NTP'],
+    value: 'Mode::Manual',
+    description: 'The default time mode',
+)
 
 option(
     'default_time_sync_object_path',
     type: 'string',
     value: '/xyz/openbmc_project/time/sync_method',
-    description: 'Default object path for time sync setting'
+    description: 'Default object path for time sync setting',
 )
 
 option(
     'erot_time_sync_interval',
     type: 'integer',
     value: 60,
-    description: 'The minimum time, in seconds, required between consecutive attempts to synchronize the ERoT clock.'
+    description: 'The minimum time, in seconds, required between consecutive attempts to synchronize the ERoT clock.',
 )
 
 option(
     'enable-in-kernel-mctp',
     type: 'feature',
     value: 'disabled',
-    description: 'Use the in-kernel MCTP stack instead of the demux daemon'
+    description: 'Use the in-kernel MCTP stack instead of the demux daemon',
 )

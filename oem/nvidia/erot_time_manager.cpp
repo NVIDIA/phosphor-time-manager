@@ -19,7 +19,8 @@ template <typename T>
 ErotTimeManager<T>::ErotTimeManager(
     sdbusplus::bus::bus& bus, sdeventplus::Event& event,
     mctp_vdm::requester::Handler<T>& reqHandler,
-    mctp_socket::Handler<T>& sockHandler, mctp_vdm::InstanceIdMgr& instanceIdMgr) :
+    mctp_socket::Handler<T>& sockHandler,
+    mctp_vdm::InstanceIdMgr& instanceIdMgr) :
     bus(bus), event(event), reqHandler(reqHandler), sockHandler(sockHandler),
     instanceIdMgr(instanceIdMgr), timerFd(timerfd_create(CLOCK_REALTIME, 0))
 {
@@ -181,7 +182,7 @@ mctp_vdm::requester::Coroutine ErotTimeManager<T>::setTimeOnErot(
     requestMsg->msgVersion = nvidiaMsgVersion;
     auto iter = request.begin() + sizeof(mctp_vdm::MsgHeader);
     auto beEpochElapsedTime = htobe64(epochElapsedTime);
-    // NOLINTNEXTLINE   
+    // NOLINTNEXTLINE
     std::copy_n(reinterpret_cast<uint8_t*>(&beEpochElapsedTime),
                 sizeof(beEpochElapsedTime), iter);
 
@@ -189,8 +190,8 @@ mctp_vdm::requester::Coroutine ErotTimeManager<T>::setTimeOnErot(
     size_t responseLen = 0;
 
     auto rc = co_await mctp_vdm::requester::SendRecvMctpVdmMsg<
-        mctp_vdm::requester::Handler<T>>(
-        reqHandler, eid, request, &responseMsg, &responseLen);
+        mctp_vdm::requester::Handler<T>>(reqHandler, eid, request, &responseMsg,
+                                         &responseLen);
     if (rc != 0U)
     {
         co_return rc;

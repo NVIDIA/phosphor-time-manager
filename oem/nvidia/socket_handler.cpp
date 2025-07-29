@@ -26,8 +26,8 @@ void Handler<T>::processRxMsg(uint8_t eid,
     if (msg->hdr.request == 0)
     {
         auto response = reinterpret_cast<const mctp_vdm::Message*>(msg);
-        size_t responseLen = requestMsg.size() -
-                             sizeof(struct mctp_vdm::MsgHeader);
+        size_t responseLen =
+            requestMsg.size() - sizeof(struct mctp_vdm::MsgHeader);
         handler.handleResponse(eid, msg->hdr.instanceId, msg->hdr.msgType,
                                msg->hdr.commandCode, response, responseLen);
     }
@@ -50,8 +50,7 @@ int DaemonHandler::initSocket(int type, int protocol,
     auto fd = std::make_unique<utils::CustomFD>(sockFd);
 
     /* Initiate a connection to the socket */
-    struct sockaddr_un addr
-    {};
+    struct sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
     // NOLINTBEGIN
     memcpy(addr.sun_path, pathName.data(), pathName.size());
@@ -64,7 +63,7 @@ int DaemonHandler::initSocket(int type, int protocol,
                    strerror(-rc));
         return rc;
     }
-    
+
     /* Register for MCTP VDM message type */
     ssize_t result =
         write(sockFd, &mctp_vdm::messageType, sizeof(mctp_vdm::messageType));
@@ -77,11 +76,11 @@ int DaemonHandler::initSocket(int type, int protocol,
         return rc;
     }
 
-    auto io = std::make_unique<IO>(event, sockFd, EPOLLIN,
-                                   std::bind(&DaemonHandler::handleReceivedMsg,
-                                             this, std::placeholders::_1,
-                                             std::placeholders::_2,
-                                             std::placeholders::_3));
+    auto io = std::make_unique<IO>(
+        event, sockFd, EPOLLIN,
+        std::bind(&DaemonHandler::handleReceivedMsg, this,
+                  std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3));
 
     socketInfoMap[pathName] = std::tuple(std::move(fd), std::move(io));
 
@@ -116,8 +115,8 @@ void DaemonHandler::handleReceivedMsg(IO& io, int fd, uint32_t revents)
     else
     {
         std::vector<uint8_t> requestMsg(peekedLength);
-        auto recvDataLength = recv(fd, static_cast<void*>(requestMsg.data()),
-                                   peekedLength, 0);
+        auto recvDataLength =
+            recv(fd, static_cast<void*>(requestMsg.data()), peekedLength, 0);
         if (recvDataLength == peekedLength)
         {
             utils::printBuffer(utils::rx, requestMsg);
@@ -134,10 +133,10 @@ void DaemonHandler::handleReceivedMsg(IO& io, int fd, uint32_t revents)
                 using type = uint8_t;
                 uint8_t eid = requestMsg[1];
                 // Extract payload from the MCTP message
-                std::vector<uint8_t> payload(requestMsg.begin() +
-                                                 sizeof(tag_owner_and_tag) +
-                                                 sizeof(eid) + sizeof(type),
-                                             requestMsg.end());
+                std::vector<uint8_t> payload(
+                    requestMsg.begin() + sizeof(tag_owner_and_tag) +
+                        sizeof(eid) + sizeof(type),
+                    requestMsg.end());
                 processRxMsg(eid, payload);
             }
         }
@@ -204,11 +203,11 @@ int InKernelHandler::initSocket(
         return rc;
     }
 
-    io = std::make_unique<IO>(event, fd, EPOLLIN,
-                              std::bind(&InKernelHandler::handleReceivedMsg,
-                                        this, std::placeholders::_1,
-                                        std::placeholders::_2,
-                                        std::placeholders::_3));
+    io = std::make_unique<IO>(
+        event, fd, EPOLLIN,
+        std::bind(&InKernelHandler::handleReceivedMsg, this,
+                  std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3));
 
     isFdValid = true;
     return fd;

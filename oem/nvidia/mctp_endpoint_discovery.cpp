@@ -31,7 +31,7 @@ MctpDiscovery<T>::MctpDiscovery(
         std::bind(std::mem_fn(&MctpDiscovery::discoverEndpoints), this,
                   std::placeholders::_1)),
     handler(handler), handlers(list)
-    // NOLINTEND
+// NOLINTEND
 {
     mctp::Infos mctpInfos;
     try
