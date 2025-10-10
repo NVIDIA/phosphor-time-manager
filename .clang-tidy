@@ -323,4 +323,3 @@ CheckOptions:
 HeaderFilterRegex: .*.hpp
 
 WarningsAsErrors: '*'
-

@@ -21,7 +21,9 @@ using Priority = int;
 static std::unordered_map<mctp::Medium, Priority> mediumPriority{
     {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.PCIe", 0},
     {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.SPI", 1},
-    {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.SMBus", 2},
+    {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.I3C", 2},
+    {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.USB", 3},
+    {"xyz.openbmc_project.MCTP.Endpoint.MediaTypes.SMBus", 4},
 };
 
 struct MctpEidInfo

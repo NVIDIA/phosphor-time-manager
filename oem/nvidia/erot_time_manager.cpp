@@ -380,7 +380,7 @@ void ErotTimeManager<T>::createErrorLog(uint8_t eid, uint8_t rc)
     if (rc == static_cast<uint8_t>(mctp_vdm::CompletionCodes::ErrGeneral))
     {
         message = "Failed to add external timestamp";
-        resolution = "Retry the operation, if problem perists contact NVIDIA";
+        resolution = "Retry the operation, if problem persists contact NVIDIA";
     }
     else if (rc ==
              static_cast<uint8_t>(mctp_vdm::CompletionCodes::ErrInvalidData))
@@ -420,7 +420,7 @@ void ErotTimeManager<T>::createErrorLog(uint8_t eid, uint8_t rc)
     auto severity =
         sdbusplus::xyz::openbmc_project::Logging::server::convertForMessage(
             sdbusplus::xyz::openbmc_project::Logging::server::Entry::Level::
-                Critical);
+                Informational);
     asioConnection->async_method_call(
         [](boost::system::error_code ec) {
             if (ec)
