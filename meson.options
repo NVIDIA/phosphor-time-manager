@@ -13,6 +13,18 @@ option(
     type: 'feature',
     description: 'Build NVIDIA ERoT time manager service',
 )
+option(
+    'hmc-time-sync',
+    type: 'feature',
+    value: 'disabled',
+    description: 'nvidia-oem: Periodically push BMC wall-clock to HMC via Redfish PATCH',
+)
+option(
+    'hmc-time-sync-host',
+    type: 'string',
+    value: '172.31.13.251',
+    description: 'nvidia-oem: IP address of the HMC for hmc-time-sync Redfish PATCH',
+)
 
 # Commandline variables list
 # Value can be assigned from commandline to below variables

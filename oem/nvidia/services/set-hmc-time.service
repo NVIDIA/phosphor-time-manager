@@ -1,0 +1,16 @@
+[Unit]
+Description=Sync BMC time to HMC via Redfish
+After=platform_init.service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/hmc-time-sync
+SyslogIdentifier=hmc-time-sync
+Restart=on-failure
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

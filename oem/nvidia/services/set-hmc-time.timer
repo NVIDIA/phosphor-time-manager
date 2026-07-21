@@ -1,0 +1,8 @@
+[Unit]
+Description=Trigger HMC time sync every hour
+
+[Timer]
+OnUnitActiveSec=1h
+
+[Install]
+WantedBy=timers.target

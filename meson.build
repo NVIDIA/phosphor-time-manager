@@ -105,6 +105,6 @@ if get_option('tests').allowed()
     subdir('test')
 endif
 
-if get_option('oem-nvidia').enabled()
+if get_option('oem-nvidia').enabled() or get_option('hmc-time-sync').enabled()
     subdir('oem/nvidia')
 endif
