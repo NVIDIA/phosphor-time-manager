@@ -7,16 +7,16 @@ namespace phosphor
 namespace time
 {
 
-class PropertyChangeListner
+class PropertyChangeListener
 {
   public:
-    PropertyChangeListner() = default;
-    virtual ~PropertyChangeListner() = default;
+    PropertyChangeListener() = default;
+    virtual ~PropertyChangeListener() = default;
 
-    PropertyChangeListner(const PropertyChangeListner&) = delete;
-    PropertyChangeListner(PropertyChangeListner&&) = delete;
-    PropertyChangeListner& operator=(const PropertyChangeListner&) = delete;
-    PropertyChangeListner& operator=(PropertyChangeListner&&) = delete;
+    PropertyChangeListener(const PropertyChangeListener&) = delete;
+    PropertyChangeListener(PropertyChangeListener&&) = delete;
+    PropertyChangeListener& operator=(const PropertyChangeListener&) = delete;
+    PropertyChangeListener& operator=(PropertyChangeListener&&) = delete;
 
     /** @brief Notified on time mode is changed */
     virtual void onModeChanged(Mode mode) = 0;

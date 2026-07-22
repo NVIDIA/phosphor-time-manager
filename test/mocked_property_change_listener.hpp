@@ -8,7 +8,7 @@ namespace phosphor
 namespace time
 {
 
-class MockPropertyChangeListner : public PropertyChangeListner
+class MockPropertyChangeListener : public PropertyChangeListener
 {
   public:
     MOCK_METHOD1(onModeChanged, void(Mode mode));

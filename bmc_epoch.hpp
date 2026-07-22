@@ -21,7 +21,7 @@ using EpochTimeIntf = sdbusplus::server::object_t<
  *  @details A concrete implementation for
  * xyz.openbmc_project.Time.EpochTime DBus API for BMC's epoch time.
  */
-class BmcEpoch : public EpochTimeIntf, public PropertyChangeListner
+class BmcEpoch : public EpochTimeIntf, public PropertyChangeListener
 {
   public:
     BmcEpoch(sdbusplus::bus_t& bus, const char* objPath, Manager& manager) :
