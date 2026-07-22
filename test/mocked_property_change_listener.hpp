@@ -11,7 +11,7 @@ namespace time
 class MockPropertyChangeListener : public PropertyChangeListener
 {
   public:
-    MOCK_METHOD1(onModeChanged, void(Mode mode));
+    MOCK_METHOD(void, onModeChanged, (Mode mode), (override));
 };
 
 } // namespace time
