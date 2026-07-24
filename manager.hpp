@@ -36,12 +36,12 @@ class Manager
 
     void setTimeMode(Mode mode)
     {
-        this->timeMode = mode;
+        timeMode = mode;
     }
 
-    Mode getTimeMode()
+    Mode getTimeMode() const
     {
-        return this->timeMode;
+        return timeMode;
     }
 
   private:
@@ -49,10 +49,10 @@ class Manager
     sdbusplus::bus_t& bus;
 
     /** @brief The match of systemd timedate property change */
-    std::vector<sdbusplus::bus::match_t> timedateMatches;
+    std::vector<sdbusplus::match> timedateMatches;
 
     /** @brief The match of settings property change */
-    std::vector<sdbusplus::bus::match_t> settingsMatches;
+    std::vector<sdbusplus::match> settingsMatches;
 
     /** @brief Settings objects of interest */
     settings::Objects settings;

@@ -6,7 +6,7 @@
 
 #include <cassert>
 
-namespace rules = sdbusplus::bus::match::rules;
+namespace rules = sdbusplus::match_rules;
 
 namespace // anonymous
 {
@@ -27,7 +27,7 @@ PHOSPHOR_LOG2_USING;
 
 Manager::Manager(sdbusplus::bus_t& bus) : bus(bus), settings(bus)
 {
-    using namespace sdbusplus::bus::match::rules;
+    using namespace sdbusplus::match_rules;
     timedateMatches.emplace_back(
         bus, propertiesChanged(systemdTimePath, systemdTimeInterface),
         [&](sdbusplus::message_t& m) { onTimedateChanged(m); });
