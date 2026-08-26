@@ -188,7 +188,7 @@ void MctpDiscovery<T>::discoverEndpoints(sdbusplus::message::message& msg)
 {
     mctp::Infos mctpInfos;
 
-    sdbusplus::message::object_path objPath;
+    sdbusplus::object_path objPath;
     dbus::InterfaceMap interfaces;
     msg.read(objPath, interfaces);
     std::string obPath = objPath;
