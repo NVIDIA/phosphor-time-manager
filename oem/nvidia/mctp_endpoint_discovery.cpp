@@ -21,7 +21,7 @@ using namespace dbus;
 template <typename T>
 MctpDiscovery<T>::MctpDiscovery(
     // NOLINTBEGIN
-    sdbusplus::bus::bus& bus, mctp_socket::Handler<T>& handler,
+    sdbusplus::bus_t& bus, mctp_socket::Handler<T>& handler,
     std::initializer_list<MctpDiscoveryHandlerIntf*> list) :
     bus(bus),
     mctpEndpointAddedSignal(

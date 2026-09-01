@@ -17,7 +17,7 @@ using namespace std::literals;
 
 template <typename T>
 ErotTimeManager<T>::ErotTimeManager(
-    sdbusplus::bus::bus& bus, sdeventplus::Event& event,
+    sdbusplus::bus_t& bus, sdeventplus::Event& event,
     mctp_vdm::requester::Handler<T>& reqHandler,
     mctp_socket::Handler<T>& sockHandler,
     mctp_vdm::InstanceIdMgr& instanceIdMgr) :

@@ -82,8 +82,7 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
      *  @param[in] sockHandler - MCTP demux daemon socket handler
      *  @param[in] instanceIdMgr - Instance ID Manager
      */
-    explicit ErotTimeManager(sdbusplus::bus::bus& bus,
-                             sdeventplus::Event& event,
+    explicit ErotTimeManager(sdbusplus::bus_t& bus, sdeventplus::Event& event,
                              mctp_vdm::requester::Handler<T>& reqHandler,
                              mctp_socket::Handler<T>& sockHandler,
                              mctp_vdm::InstanceIdMgr& instanceIdMgr);
@@ -101,7 +100,7 @@ class ErotTimeManager : public mctp_vdm::MctpDiscoveryHandlerIntf
     void createErrorLog(uint8_t eid, uint8_t rc);
 
     /** @brief reference to the systemd bus */
-    sdbusplus::bus::bus& bus;
+    sdbusplus::bus_t& bus;
 
     /** @brief reference to the event loop */
     sdeventplus::Event& event;
